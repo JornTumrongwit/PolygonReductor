@@ -136,6 +136,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OGL\includes\glad.c" />
     <ClCompile Include="ProgInit.cpp" />
+    <ClCompile Include="Render.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="Display.h" />
     <ClInclude Include="ProgInit.h" />
+    <ClInclude Include="Render.h" />
     <ClInclude Include="Shader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
