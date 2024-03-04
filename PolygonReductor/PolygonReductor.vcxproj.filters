@@ -36,6 +36,9 @@
     <ClCompile Include="Render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Polygon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="VertexShader.vs">
@@ -58,7 +61,7 @@
     <ClInclude Include="Render.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="polygons.h">
+    <ClInclude Include="Polygon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
