@@ -14,6 +14,7 @@ void processInput(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const bool wireframe = true;
+const bool dot = true;
 
 int main()
 {
@@ -45,8 +46,12 @@ int main()
         -0.5f,  0.5f, 0.0f   // top left 
     };
     unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 3,  // first Triangle
-        1, 2, 3   // second Triangle
+        0, 1, 
+        1, 3, 
+        3, 0,
+        1, 2, 
+        2, 3,
+        3, 1
     };
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -77,12 +82,16 @@ int main()
 
     // draw in wireframe polygons.
     if(wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (dot) {
+        glEnable(GL_PROGRAM_POINT_SIZE);
+        glPointSize(5);
+    }
 
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
-        Rendering(shader, window, VAO);
+        Rendering(shader, window, VAO, 12);
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:

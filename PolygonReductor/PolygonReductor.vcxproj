@@ -145,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Display.h" />
+    <ClInclude Include="polygons.h" />
     <ClInclude Include="ProgInit.h" />
     <ClInclude Include="Render.h" />
     <ClInclude Include="Shader.h" />
