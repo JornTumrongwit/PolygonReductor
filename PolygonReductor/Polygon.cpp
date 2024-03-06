@@ -32,11 +32,11 @@ void Polygon::parse(const char* filepath) {
 
 		if ((c1 == 'v') && (c2 == ' ')) {
 			fscanf_s(fp, "%f %f %f", &x, &y, &z);
-			this->vertices[this->vertex_count] = x;
+			this->vertices[this->vertex_count] = x / 1000.0;
 			this->vertex_count++;
-			this->vertices[this->vertex_count] = y;
+			this->vertices[this->vertex_count] = y / 1000.0;
 			this->vertex_count++;
-			this->vertices[this->vertex_count] = z;
+			this->vertices[this->vertex_count] = z / 1000.0;
 			this->vertex_count++;
 		}
 		else if ((c1 == 'i') && (c2 == ' ')) {
