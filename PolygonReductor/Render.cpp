@@ -12,7 +12,7 @@ void processInput(GLFWwindow* window)
 
 // Rendering: will be called every loop
 // ------------------------------------
-void Rendering(Shader shader,GLFWwindow* window, unsigned int VAO, unsigned int lines){
+void Rendering(Shader shader, GLFWwindow* window, unsigned int VAO, unsigned int lines){
     // input
     // -----
     processInput(window);

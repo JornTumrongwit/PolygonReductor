@@ -47,6 +47,9 @@
     <None Include="FragmentShader.fs">
       <Filter>Shader Files</Filter>
     </None>
+    <None Include="test_graph.grp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">

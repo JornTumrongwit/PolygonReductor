@@ -16,6 +16,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const bool wireframe = true;
 const bool dot = true;
+const char* filepath = "test_graph.grp";
 
 int main()
 {
@@ -40,22 +41,9 @@ int main()
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
-    float vertices[] = {
-         0.5f,  0.5f, 0.0f,  // top right
-         0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left 
-    };
-    unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 
-        1, 3, 
-        3, 0,
-        1, 2, 
-        2, 3,
-        3, 1
-    };
 
-    Polygon polygon = Polygon(vertices, indices, sizeof(vertices), sizeof(indices));
+
+    Polygon polygon = Polygon(filepath);
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -84,9 +72,7 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &(polygon.VAO));
-    glDeleteBuffers(1, &(polygon.VBO));
-    glDeleteBuffers(1, &(polygon.EBO));
+    
     shader.ShaderDelete();
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
