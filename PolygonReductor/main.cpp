@@ -7,6 +7,7 @@
 #include <ProgInit.h>
 #include <Render.h>
 #include <Polygon.h>
+#include <main.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -17,6 +18,10 @@ const unsigned int SCR_HEIGHT = 600;
 const bool wireframe = true;
 const bool dot = true;
 const char* filepath = "test_graph.grp";
+bool pressed = false;
+// set up vertex data (and buffer(s)) and configure vertex attributes
+    // ------------------------------------------------------------------
+Polygon polygon = Polygon(filepath);
 
 int main()
 {
@@ -39,11 +44,9 @@ int main()
     Shader shader = Shader();
     shader.LinkShaders("VertexShader.vs", "FragmentShader.fs");
 
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-
-
-    Polygon polygon = Polygon(filepath);
+    // Initiating the polygons
+    // -----------------------
+    polygon.Init();
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -59,10 +62,8 @@ int main()
     // draw in wireframe polygons.
     if(wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     if (dot) {
-        glEnable(GL_PROGRAM_POINT_SIZE);
-        glPointSize(5);
+        glPointSize(10);
     }
-
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -79,4 +80,19 @@ int main()
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
+}
+
+// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && pressed == true)
+        pressed = false;
+    else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && pressed == false) {
+        polygon.Contract(1, 3);
+        pressed = true;
+    }
 }

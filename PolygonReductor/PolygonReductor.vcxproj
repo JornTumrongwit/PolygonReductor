@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Display.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="Polygon.h" />
     <ClInclude Include="ProgInit.h" />
     <ClInclude Include="Render.h" />
