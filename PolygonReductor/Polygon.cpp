@@ -140,9 +140,6 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 		down++;
 		index_count--;
 	}
-	for (unsigned int i = 0; i < index_count; i++) {
-		std::cout << indices[i] << "\n";
-	}
 	refresh();
 }
 
@@ -163,16 +160,52 @@ void Polygon::Split() {
 		if (head2 == 0) return;
 		// if head1 is 0, head2 is non-zero, split generates only one triangle
 		else {
-			bool addself = false;//small flag that its own edge was formed
-			for (unsigned int i = 0; i < this->index_count; i += 2) {
-				if (indices[i] == 0 || indices[i + 1] == 0) {
-					
+			// y = mx + b
+			// m = rise/run
+			float m = (vertices[v2 * 3 + 1] - vertices[head2 * 3 + 1]) / (vertices[v2 * 3] - vertices[head2 * 3]);
+			// b = y-mx
+			float b = vertices[v2 * 3 + 1] - m * vertices[v2 * 3];
+			// connect v2 to head2
+			indices.push_back(v2);
+			indices.push_back(head2); 
+			edges[v2].insert(head2);
+			// connect v1 to v2
+			indices.push_back(v1);
+			indices.push_back(v2);
+			edges[v2].insert(v1);
+			edges[v1].insert(v2);
+			//more if the y is higher than it should
+			bool is_more = m * vertices[v1 * 3] + b >= vertices[v1 * 3 + 1];
+			// check if any of the vertex that connects to v1 should move to connect to v2
+			for (int i = 0; i < index_count; i += 2) {
+				int mod = -1;
+				if (indices[i] == v1) {
+					mod = 0;
+				}
+				else if (indices[i + 1] == v1) {
+					mod = 1;
+				}
+				//v1 is in i + mod, head2 is in i + (1-mod)
+				if (mod >= 0) {
+					//if the pair is the head itself, ignore all of this
+					if (indices[i + 1 - mod] == head2) continue;
+					//check if its pair is not on the same side of the line
+					//if not, move to v2
+					if ((m * vertices[indices[i + (1 - mod)] * 3] + b >= vertices[indices[i + (1 - mod)] * 3 + 1]) != is_more) {
+						edges[v2].insert(head2);
+						edges[head2].erase(v1);
+						edges[head2].insert(v2);
+						edges[v1].erase(head2);
+						indices[i + mod] = v2;
+					}
 				}
 			}
+			index_count += 4;
 		}
 	}
 	// else, have both heads be the end vertices of a line
 	// get the line equation, check which side the vertices are on, then generate the edges and move according to that
+	refresh();
 }
 
 void Polygon::refresh() {
