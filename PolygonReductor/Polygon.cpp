@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <queue>
 
 Polygon::Polygon() {
 	//haha get blank'd on
@@ -88,23 +89,34 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	//Idea: get a set of all the adjacents of v2, get the list of edges that need to be added
 	//		replace the edges of v2 in the list with the edges in that list, then the rest
 	//      of the edges will be set to 0,0, which is to be ignored
-	this->contracts.push_back(v2);
-	this->contracts.push_back(v1);
+	this->contracts.push(v2);
+	this->contracts.push(v1);
+	unsigned int vertex_head = 0;
 	std::set<unsigned int> adj = edges[v2];
 	std::vector<unsigned int> to_add;
 	for (auto vert: adj) {
-		for (auto end : adj) {
+		for (auto endvert : adj) {
+			//check only one way
 			//if not same vertex and not yet adjacent
-			if (vert != end && !edges[vert].count(end)) {
-				to_add.push_back(vert);
-				to_add.push_back(end);
-				edges[end].insert(vert);
-				edges[vert].insert(end);
+			if (vert < endvert && (vert == v1 || endvert == v1)) {
+				if (!edges[vert].count(endvert)) {
+					to_add.push_back(vert);
+					to_add.push_back(endvert);
+					edges[endvert].insert(vert);
+					edges[vert].insert(endvert);
+				}
+				else {
+					//this is a triangle head
+					std::cout << vert << endvert << "\n";
+					this->contracts.push(endvert);
+					vertex_head++;
+				}
 			}
 		}
 		//remove this vertex from adjacency
 		edges[vert].erase(v2);
 	}
+	if (vertex_head < 2) this->contracts.push(0); //signify single triangle collapsed
 	edges.erase(v2);
 	unsigned int add_index = 0;
 	for (unsigned int i = 0; i < this->index_count; i+=2) {

@@ -92,7 +92,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && pressed == true)
         pressed = false;
     else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && pressed == false) {
-        polygon.Contract(1, 3);
+        polygon.Contract(4, 3);
         pressed = true;
     }
 }

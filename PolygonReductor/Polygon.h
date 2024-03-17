@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <set>
 #include <vector>
+#include <queue>
 
 class Polygon
 {
@@ -25,5 +26,10 @@ private:
 	unsigned int indices[999];
 	unsigned int vertex_count, index_count;
 	std::unordered_map<unsigned int, std::set<unsigned int>> edges;
-	std::vector<unsigned int> contracts;
+	//queue structure (in order of pop)
+	// first triangle head (also determines if it is a single-triangle op)
+	// second triangle head
+	// vertex you contract to
+	// vertex that moved into the contract
+	std::queue<unsigned int> contracts;
 };
