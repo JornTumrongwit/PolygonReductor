@@ -23,6 +23,10 @@ public:
 	void DeleteBuffer();
 	//refresh buffers
 	void refresh();
+	//util for checking "side" of the line the point is in
+	bool is_above(unsigned int index, float m, float b);
+	//util for moving the edge in splitting
+	void splitter(unsigned int v1, unsigned int v2, unsigned int head1, unsigned int head2, float m, float b);
 	//the buffers
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;

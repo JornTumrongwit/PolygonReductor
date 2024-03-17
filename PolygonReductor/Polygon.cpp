@@ -174,38 +174,68 @@ void Polygon::Split() {
 			indices.push_back(v2);
 			edges[v2].insert(v1);
 			edges[v1].insert(v2);
-			//more if the y is higher than it should
-			bool is_more = m * vertices[v1 * 3] + b >= vertices[v1 * 3 + 1];
-			// check if any of the vertex that connects to v1 should move to connect to v2
-			for (int i = 0; i < index_count; i += 2) {
-				int mod = -1;
-				if (indices[i] == v1) {
-					mod = 0;
-				}
-				else if (indices[i + 1] == v1) {
-					mod = 1;
-				}
-				//v1 is in i + mod, head2 is in i + (1-mod)
-				if (mod >= 0) {
-					//if the pair is the head itself, ignore all of this
-					if (indices[i + 1 - mod] == head2) continue;
-					//check if its pair is not on the same side of the line
-					//if not, move to v2
-					if ((m * vertices[indices[i + (1 - mod)] * 3] + b >= vertices[indices[i + (1 - mod)] * 3 + 1]) != is_more) {
-						edges[v2].insert(head2);
-						edges[head2].erase(v1);
-						edges[head2].insert(v2);
-						edges[v1].erase(head2);
-						indices[i + mod] = v2;
-					}
-				}
-			}
+			splitter(v1, v2, head1, head2, m, b);
 			index_count += 4;
 		}
 	}
 	// else, have both heads be the end vertices of a line
-	// get the line equation, check which side the vertices are on, then generate the edges and move according to that
+	// get the line equation, check which side the vertices are on, then generate the edges or move according to that
+	else {
+		// line will be made from head1 and head2
+		// y = mx + b
+		// m = rise/run
+		float m = (vertices[head1 * 3 + 1] - vertices[head2 * 3 + 1]) / (vertices[head1 * 3] - vertices[head2 * 3]);
+		// b = y-mx
+		float b = vertices[head2 * 3 + 1] - m * vertices[head2 * 3];
+		splitter(v1, v2, head1, head2, m, b);
+		// connect v2 to head1
+		indices.push_back(v2);
+		indices.push_back(head1);
+		edges[v2].insert(head1);
+		// connect v2 to head2
+		indices.push_back(v2);
+		indices.push_back(head2);
+		edges[v2].insert(head2);
+		// connect v1 to v2
+		indices.push_back(v1);
+		indices.push_back(v2);
+		edges[v2].insert(v1);
+		edges[v1].insert(v2);
+		index_count += 6;
+	}
 	refresh();
+}
+
+bool Polygon::is_above(unsigned int index, float m, float b) {
+	return m * vertices[index * 3] + b >= vertices[index * 3 + 1];
+}
+
+void Polygon::splitter(unsigned int v1, unsigned int v2, unsigned int head1, unsigned int head2, float m, float b){
+	bool v1_more = is_above(v1, m, b);
+	// check if any of the vertex that connects to v1 should move to connect to v2
+	for (int i = 0; i < index_count; i += 2) {
+		int mod = -1;
+		if (indices[i] == v1) {
+			mod = 0;
+		}
+		else if (indices[i + 1] == v1) {
+			mod = 1;
+		}
+		//v1 is in i + mod, head2 is in i + (1-mod)
+		if (mod >= 0) {
+			//if the pair is the head itself, ignore all of this
+			if (indices[i + 1 - mod] == head2 || indices[i + 1 - mod] == head1) continue;
+			//check if its pair is not on the same side of the line
+			//if not, move to v2
+			if (is_above(indices[i + 1 - mod], m, b) != v1_more) {
+				edges[v2].insert(head2);
+				edges[head2].erase(v1);
+				edges[head2].insert(v2);
+				edges[v1].erase(head2);
+				indices[i + mod] = v2;
+			}
+		}
+	}
 }
 
 void Polygon::refresh() {
