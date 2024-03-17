@@ -1,6 +1,6 @@
 //First vertex (at index 0) is used to buffer the small display bug from displaying vertex points
 v 2000.0 2000.0 0.0
-v 500.0 500.0 -500.0  
+v 500.0 500.0 0.0  
 v 500.0 -500.0 0.0
 v -500.0 -500.0 0.0
 v -500.0 500.0 0.0

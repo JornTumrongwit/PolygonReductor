@@ -17,8 +17,9 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const bool wireframe = true;
 const bool dot = true;
-const char* filepath = "test_graph.grp";
-bool pressed = false;
+const char* filepath = "bigger_graph.grp";
+bool r_pressed = false;
+bool z_pressed = false;
 // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
 Polygon polygon = Polygon(filepath);
@@ -68,7 +69,7 @@ int main()
     // -----------
     while (!glfwWindowShouldClose(window))
     {
-        Rendering(shader, window, polygon.VAO, 12);
+        Rendering(shader, window, polygon.VAO, polygon.index_count);
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -89,10 +90,17 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && pressed == true)
-        pressed = false;
-    else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && pressed == false) {
-        polygon.Contract(4, 3);
-        pressed = true;
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && r_pressed == true)
+        r_pressed = false;
+    else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && r_pressed == false) {
+        polygon.Contract(5, 6);
+        r_pressed = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_RELEASE && z_pressed == true)
+        z_pressed = false;
+    else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS && z_pressed == false) {
+        polygon.Split();
+        z_pressed = true;
     }
 }

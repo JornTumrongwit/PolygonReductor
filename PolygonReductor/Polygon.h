@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <set>
 #include <vector>
-#include <queue>
+#include <stack>
 
 class Polygon
 {
@@ -15,21 +15,25 @@ public:
 	void parse(const char* filepath);
 	//initiating the buffers
 	void Init();
-	//deleting vertices
+	//collapsing edge
 	void Contract(unsigned int v1, unsigned int v2);
+	//splitting vertex from queue
+	void Split();
 	//deleting buffers
 	void DeleteBuffer();
+	//refresh buffers
+	void refresh();
 	//the buffers
 	unsigned int VBO, VAO, EBO;
+	unsigned int vertex_count, index_count;
 private:
 	float vertices[999];
 	unsigned int indices[999];
-	unsigned int vertex_count, index_count;
 	std::unordered_map<unsigned int, std::set<unsigned int>> edges;
 	//queue structure (in order of pop)
 	// first triangle head (also determines if it is a single-triangle op)
 	// second triangle head
 	// vertex you contract to
 	// vertex that moved into the contract
-	std::queue<unsigned int> contracts;
+	std::stack<unsigned int> contracts;
 };

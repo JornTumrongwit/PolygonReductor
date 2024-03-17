@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
-#include <queue>
+#include <stack>
 
 Polygon::Polygon() {
 	//haha get blank'd on
@@ -108,7 +108,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				else {
 					//this is a triangle head
 					std::cout << vert << endvert << "\n";
-					this->contracts.push(endvert);
+					if (vert == v1) this->contracts.push(endvert);
+					else this->contracts.push(vert);
 					vertex_head++;
 				}
 			}
@@ -116,7 +117,10 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 		//remove this vertex from adjacency
 		edges[vert].erase(v2);
 	}
-	if (vertex_head < 2) this->contracts.push(0); //signify single triangle collapsed
+	while (vertex_head < 2) {
+		this->contracts.push(0); //signify single triangle collapsed
+		vertex_head++;
+	}
 	edges.erase(v2);
 	unsigned int add_index = 0;
 	for (unsigned int i = 0; i < this->index_count; i+=2) {
@@ -131,8 +135,24 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				indices[i + 1] = 0;
 			}
 		}
-		std::cout << indices[i] << " " << indices[i + 1] << "\n";
 	}
+	refresh();
+}
+
+void Polygon::Split() {
+	if (this->contracts.size() <= 0) return;
+	unsigned int head1 = this->contracts.top();
+	this->contracts.pop();
+	unsigned int head2 = this->contracts.top();
+	this->contracts.pop();
+	unsigned int v1 = this->contracts.top();
+	this->contracts.pop(); 
+	unsigned int v2 = this->contracts.top();
+	this->contracts.pop();
+	std::cout << "SPLITTING " << v2 << " OUT OF " << v1 << " WITH HEADS "<< head1 << " " << head2 << "\n";
+}
+
+void Polygon::refresh() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, this->indices, GL_STATIC_DRAW);
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind

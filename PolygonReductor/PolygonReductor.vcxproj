@@ -141,6 +141,7 @@
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="bigger_graph.grp" />
     <None Include="FragmentShader.fs" />
     <None Include="test_graph.grp" />
     <None Include="VertexShader.vs" />
