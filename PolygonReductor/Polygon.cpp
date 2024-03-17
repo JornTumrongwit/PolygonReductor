@@ -38,21 +38,18 @@ void Polygon::parse(const char* filepath) {
 
 		if ((c1 == 'v') && (c2 == ' ')) {
 			fscanf_s(fp, "%f %f %f", &x, &y, &z);
-			this->vertices[this->vertex_count] = x / 1000.0;
-			this->vertex_count++;
-			this->vertices[this->vertex_count] = y / 1000.0;
-			this->vertex_count++;
-			this->vertices[this->vertex_count] = z / 1000.0;
-			this->vertex_count++;
+			vertices.push_back(x / 1000.0);
+			vertices.push_back(y / 1000.0); 
+			vertices.push_back(z / 1000.0);
+			vertex_count += 3;
 		}
 		else if ((c1 == 'i') && (c2 == ' ')) {
 			fscanf_s(fp, "%d %d", &ix, &iy);
-			this->indices[this->index_count] = ix;
-			this->index_count++;
-			this->indices[this->index_count] = iy;
-			this->index_count++;
+			indices.push_back(ix);
+			indices.push_back(iy);
 			edges[ix].insert(iy);
 			edges[iy].insert(ix);
+			index_count += 2;
 		}
 	}
 
@@ -75,10 +72,10 @@ void Polygon::Init() {
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * this->vertex_count, this->vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * this->vertex_count, &vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, this->indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, &indices[0], GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -150,11 +147,27 @@ void Polygon::Split() {
 	unsigned int v2 = this->contracts.top();
 	this->contracts.pop();
 	std::cout << "SPLITTING " << v2 << " OUT OF " << v1 << " WITH HEADS "<< head1 << " " << head2 << "\n";
+	//Idea: check the heads
+	// if head1 is 0, and head2 is 0, blank collapse, skip
+	if (head1 == 0) {
+		if (head2 == 0) return;
+		// if head1 is 0, head2 is non-zero, split generates only one triangle
+		else {
+			bool addself = false;//small flag that its own edge was formed
+			for (unsigned int i = 0; i < this->index_count; i += 2) {
+				if (indices[i] == 0 || indices[i + 1] == 0) {
+					
+				}
+			}
+		}
+	}
+	// else, have both heads be the end vertices of a line
+	// get the line equation, check which side the vertices are on, then generate the edges and move according to that
 }
 
 void Polygon::refresh() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, this->indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, &indices[0], GL_STATIC_DRAW);
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 

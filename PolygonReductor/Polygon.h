@@ -27,8 +27,8 @@ public:
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;
 private:
-	float vertices[999];
-	unsigned int indices[999];
+	std::vector<float> vertices;
+	std::vector<unsigned int> indices;
 	std::unordered_map<unsigned int, std::set<unsigned int>> edges;
 	//queue structure (in order of pop)
 	// first triangle head (also determines if it is a single-triangle op)
