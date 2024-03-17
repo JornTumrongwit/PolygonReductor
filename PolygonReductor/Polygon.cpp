@@ -91,6 +91,7 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	unsigned int vertex_head = 0;
 	std::set<unsigned int> adj = edges[v2];
 	std::vector<unsigned int> to_add;
+	std::vector<unsigned int> deletes;
 	for (auto vert: adj) {
 		for (auto endvert : adj) {
 			//check only one way
@@ -104,7 +105,6 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				}
 				else {
 					//this is a triangle head
-					std::cout << vert << endvert << "\n";
 					if (vert == v1) this->contracts.push(endvert);
 					else this->contracts.push(vert);
 					vertex_head++;
@@ -128,10 +128,20 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				add_index += 2;
 			}
 			else {
-				indices[i] = 0;
-				indices[i + 1] = 0;
+				deletes.push_back(i);
+				deletes.push_back(i+1);
 			}
 		}
+	}
+	unsigned int down = 0;
+	for (unsigned int i = 0; i < deletes.size(); i++) {
+		unsigned int index = deletes[i] - down;
+		indices.erase(std::next(indices.begin(), index));
+		down++;
+		index_count--;
+	}
+	for (unsigned int i = 0; i < index_count; i++) {
+		std::cout << indices[i] << "\n";
 	}
 	refresh();
 }
