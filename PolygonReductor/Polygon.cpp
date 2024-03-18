@@ -228,10 +228,10 @@ void Polygon::splitter(unsigned int v1, unsigned int v2, unsigned int head1, uns
 			//check if its pair is not on the same side of the line
 			//if not, move to v2
 			if (is_above(indices[i + 1 - mod], m, b) != v1_more) {
-				edges[v2].insert(head2);
-				edges[head2].erase(v1);
-				edges[head2].insert(v2);
-				edges[v1].erase(head2);
+				edges[v2].insert(indices[i + 1 - mod]);
+				edges[indices[i + 1 - mod]].erase(v1);
+				edges[indices[i + 1 - mod]].insert(v2);
+				edges[v1].erase(indices[i + 1 - mod]);
 				indices[i + mod] = v2;
 			}
 		}
