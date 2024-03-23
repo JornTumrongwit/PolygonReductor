@@ -40,4 +40,6 @@ private:
 	// vertex you contract to
 	// vertex that moved into the contract
 	std::stack<unsigned int> contracts;
+	// perimeter vectors
+	std::vector<bool> perimeters;
 };

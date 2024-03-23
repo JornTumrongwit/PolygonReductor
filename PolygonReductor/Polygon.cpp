@@ -29,7 +29,7 @@ void Polygon::parse(const char* filepath) {
 
 	while (!feof(fp)) {
 		c1 = fgetc(fp);
-		while (!(c1 == 'v' || c1 == 'i')) {
+		while (!(c1 == 'v' || c1 == 'i' || c1 == 'p')) {
 			c1 = fgetc(fp);
 			if (feof(fp))
 				break;
@@ -51,8 +51,15 @@ void Polygon::parse(const char* filepath) {
 			edges[iy].insert(ix);
 			index_count += 2;
 		}
+		else if ((c1 == 'p') && (c2 == ' ')) {
+			fscanf_s(fp, "%d", &ix);
+			while (perimeters.size() < ix+1) {
+				perimeters.push_back(false);
+			}
+			perimeters[ix] = true;
+		}
 	}
-
+	for (auto perimeter : perimeters) std::cout << perimeter << "\n";
 	fclose(fp); // Finished parsing
 }
 
