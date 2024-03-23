@@ -172,8 +172,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 		this->contracts.push(0);
 		this->contracts.push(0);
 	}
-	//if (head1 != 0 && edges[head1].size() == 1) Contract(v1, head1);
-	//if (head2 != 0 && edges[head2].size() == 1) Contract(v1, head2);
+	if (head1 != 0 && edges[head1].size() == 1) Contract(v1, head1);
+	if (head2 != 0 && edges[head2].size() == 1) Contract(v1, head2);
 	refresh();
 }
 
