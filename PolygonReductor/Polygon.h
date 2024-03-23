@@ -27,6 +27,8 @@ public:
 	bool is_above(unsigned int index, float m, float b);
 	//util for moving the edge in splitting
 	void splitter(unsigned int v1, unsigned int v2, unsigned int head1, unsigned int head2, float m, float b);
+	//check if an edge is a perimeter edge
+	bool is_perim(unsigned int v1, unsigned int v2);
 	//the buffers
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;

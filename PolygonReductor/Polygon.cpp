@@ -59,7 +59,7 @@ void Polygon::parse(const char* filepath) {
 			perimeters[ix] = true;
 		}
 	}
-	for (auto perimeter : perimeters) std::cout << perimeter << "\n";
+	for (int i = 0; i < indices.size(); i += 2) std::cout <<indices[i] << " " << indices[i+1] << " " << is_perim(indices[i], indices[i + 1]) << "\n";
 	fclose(fp); // Finished parsing
 }
 
