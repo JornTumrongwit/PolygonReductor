@@ -37,11 +37,14 @@ private:
 	std::vector<unsigned int> indices;
 	std::unordered_map<unsigned int, std::set<unsigned int>> edges;
 	//queue structure (in order of pop)
-	// first triangle head (also determines if it is a single-triangle op)
+	// first triangle head (also determines if it is a single-triangle op) (if it is a line collapse, head = v1)
 	// second triangle head
 	// vertex you contract to
 	// vertex that moved into the contract
+	// v1 normal
+	// v2 normal
 	std::stack<unsigned int> contracts;
 	// perimeter vectors
 	std::vector<bool> perimeters;
+	std::set<unsigned int> discarded;
 };

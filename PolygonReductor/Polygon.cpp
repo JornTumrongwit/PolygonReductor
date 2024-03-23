@@ -94,7 +94,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	//      of the edges will be set to 0,0, which is to be ignored
 	this->contracts.push(v2);
 	this->contracts.push(v1);
-	unsigned int vertex_head = 0;
+	discarded.insert(v2);
+	unsigned int vertex_head = 0, head1 = 0, head2 = 0;
 	std::set<unsigned int> adj = edges[v2];
 	std::vector<unsigned int> to_add;
 	std::vector<unsigned int> deletes;
@@ -102,7 +103,7 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 		for (auto endvert : adj) {
 			//check only one way
 			//if not same vertex and not yet adjacent
-			if (vert < endvert && (vert == v1 || endvert == v1)) {
+			if (vert < endvert && (vert == v1 || endvert == v1) && !discarded.count(vert)) {
 				if (!edges[vert].count(endvert)) {
 					to_add.push_back(vert);
 					to_add.push_back(endvert);
@@ -111,6 +112,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				}
 				else {
 					//this is a triangle head
+					if (head1 == 0) head1 = endvert;
+					else head2 = endvert;
 					if (vert == v1) this->contracts.push(endvert);
 					else this->contracts.push(vert);
 					vertex_head++;
@@ -119,6 +122,17 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 		}
 		//remove this vertex from adjacency
 		edges[vert].erase(v2);
+	}
+	bool collapsed = false;
+	//means that some perimeter quality changed
+	if (vertex_head > 0) {
+		collapsed = true;
+	}
+	if (vertex_head == 0 && edges[v2].find(v1) != edges[v2].end()) {
+		//single line collapse
+		//enocde via head = v1
+		this->contracts.push(v1);
+		vertex_head = 1;
 	}
 	while (vertex_head < 2) {
 		this->contracts.push(0); //signify single triangle collapsed
@@ -146,6 +160,20 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 		down++;
 		index_count--;
 	}
+	if (collapsed) {
+		this->contracts.push(perimeters[v1]);
+		this->contracts.push(perimeters[v2]);
+		if (perimeters[v1] || perimeters[v2]) {
+			perimeters[v2] = true;
+			perimeters[v1] = true;
+		}
+	}
+	else {
+		this->contracts.push(0);
+		this->contracts.push(0);
+	}
+	//if (head1 != 0 && edges[head1].size() == 1) Contract(v1, head1);
+	//if (head2 != 0 && edges[head2].size() == 1) Contract(v1, head2);
 	refresh();
 }
 
@@ -155,6 +183,10 @@ bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
 
 void Polygon::Split() {
 	if (this->contracts.size() <= 0) return;
+	bool p2 = this->contracts.top();
+	this->contracts.pop();
+	bool p1 = this->contracts.top();
+	this->contracts.pop();
 	unsigned int head1 = this->contracts.top();
 	this->contracts.pop();
 	unsigned int head2 = this->contracts.top();
@@ -166,6 +198,19 @@ void Polygon::Split() {
 	std::cout << "SPLITTING " << v2 << " OUT OF " << v1 << " WITH HEADS "<< head1 << " " << head2 << "\n";
 	//Idea: check the heads
 	// if head1 is 0, and head2 is 0, blank collapse, skip
+	perimeters[v2] = p2;
+	perimeters[v1] = p1;
+	// if head2 = v1, then it is a single edge
+	if (head2 == v1) {
+		// connect v1 to v2
+		indices.push_back(v1);
+		indices.push_back(v2);
+		edges[v2].insert(v1);
+		edges[v1].insert(v2);
+		index_count += 2;
+		refresh();
+		return;
+	}
 	if (head1 == 0) {
 		if (head2 == 0) return;
 		// if head1 is 0, head2 is non-zero, split generates only one triangle
@@ -179,6 +224,7 @@ void Polygon::Split() {
 			indices.push_back(v2);
 			indices.push_back(head2); 
 			edges[v2].insert(head2);
+			edges[head2].insert(v2);
 			// connect v1 to v2
 			indices.push_back(v1);
 			indices.push_back(v2);
@@ -202,9 +248,12 @@ void Polygon::Split() {
 		indices.push_back(v2);
 		indices.push_back(head1);
 		edges[v2].insert(head1);
+		edges[head1].insert(v2);
+
 		// connect v2 to head2
 		indices.push_back(v2);
 		indices.push_back(head2);
+		edges[head2].insert(v2);
 		edges[v2].insert(head2);
 		// connect v1 to v2
 		indices.push_back(v1);
@@ -214,6 +263,11 @@ void Polygon::Split() {
 		index_count += 6;
 	}
 	refresh();
+	std::cout<<v2<<": ";
+	for (auto adj : edges[v2]) {
+		std::cout << adj << " ";
+	}
+	std::cout << "\n";
 }
 
 bool Polygon::is_above(unsigned int index, float m, float b) {
