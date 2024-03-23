@@ -150,6 +150,10 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	refresh();
 }
 
+bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
+	return perimeters[v1] && perimeters[v2];
+}
+
 void Polygon::Split() {
 	if (this->contracts.size() <= 0) return;
 	unsigned int head1 = this->contracts.top();
