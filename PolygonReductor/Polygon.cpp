@@ -17,7 +17,8 @@ void Polygon::parse(const char* filepath) {
 	FILE* fp;
 	int c1, c2;
 	float x, y, z;
-	unsigned int ix, iy, iz;
+	unsigned int ix, iy, iz, t1, ng1, t2, ng2;
+	std::unordered_map<int, std::unordered_map<int, int>> edgemap;
 
 	fopen_s(&fp, filepath, "rb");
 
@@ -29,7 +30,7 @@ void Polygon::parse(const char* filepath) {
 
 	while (!feof(fp)) {
 		c1 = fgetc(fp);
-		while (!(c1 == 'v' || c1 == 'i' || c1 == 'p')) {
+		while (!(c1 == 'v' || c1 == 'i')) {
 			c1 = fgetc(fp);
 			if (feof(fp))
 				break;
@@ -37,6 +38,7 @@ void Polygon::parse(const char* filepath) {
 		c2 = fgetc(fp);
 
 		if ((c1 == 'v') && (c2 == ' ')) {
+			//strong vertices
 			fscanf_s(fp, "%f %f %f", &x, &y, &z);
 			vertices.push_back(x / 1000.0);
 			vertices.push_back(y / 1000.0); 
@@ -44,25 +46,44 @@ void Polygon::parse(const char* filepath) {
 			vertex_count += 3;
 		}
 		else if ((c1 == 'i') && (c2 == ' ')) {
+			//storing the halfedges
 			fscanf_s(fp, "%d %d %d", &ix, &iy, &iz);
-			indices.push_back(ix);
-			indices.push_back(iy);
-			edges[ix].insert(iy);
-			edges[iy].insert(ix);
-			index_count += 2;
-			if (iz) {
-				outer[ix].insert(iy);
-				outer[iy].insert(ix); 
+			//store in the edgemap
+			edgemap[iy][ix] = d_edge.size();
+			edgemap[iz][iy] = d_edge.size() + 2;
+			edgemap[ix][iz] = d_edge.size() + 4;
+			//store the vertex, and twin
+			d_edge.push_back(ix);
+			if (edgemap.find(ix) != edgemap.end()) {
+				if (edgemap[ix].find(iy) != edgemap[ix].end()) {
+					d_edge[edgemap[ix][iy] + 1] = d_edge.size() - 1;
+					d_edge.push_back(edgemap[ix][iy]);
+				}
+				else d_edge.push_back(-1);
+			} else d_edge.push_back(-1);
+
+			d_edge.push_back(iy);
+			if (edgemap.find(iy) != edgemap.end()) {
+				if (edgemap[iy].find(iz) != edgemap[iy].end()) {
+					d_edge[edgemap[iy][iz] + 1] = d_edge.size() - 1;
+					d_edge.push_back(edgemap[iy][iz]);
+				}
+				else d_edge.push_back(-1);
 			}
-		}
-		else if ((c1 == 'p') && (c2 == ' ')) {
-			fscanf_s(fp, "%d", &ix);
-			while (perimeters.size() < ix+1) {
-				perimeters.push_back(false);
+			else d_edge.push_back(-1);
+
+			d_edge.push_back(iz);
+			if (edgemap.find(iz) != edgemap.end()) {
+				if (edgemap[iz].find(ix) != edgemap[iz].end()) {
+					d_edge[edgemap[iz][ix] + 1] = d_edge.size() - 1;
+					d_edge.push_back(edgemap[iz][ix]);
+				}
+				else d_edge.push_back(-1);
 			}
-			perimeters[ix] = true;
+			else d_edge.push_back(-1);
 		}
 	}
+	construct();
 	fclose(fp); // Finished parsing
 }
 
@@ -74,6 +95,37 @@ Polygon::Polygon(const char* filepath) {
 	parse(filepath);
 }
 
+void Polygon::construct() {
+	indices.clear();
+	added_flags.clear();
+	construct_help(starter);
+}
+
+void Polygon::construct_help(unsigned int start) {
+	//A single halfedge will mean that this triangle is already used in a manifold graph
+	if (added_flags.count(start)) return;
+	unsigned int prev_ind = prev(start);
+	unsigned int next_ind = next(start);
+	indices.push_back(d_edge[prev_ind]);
+	indices.push_back(d_edge[start]);
+	indices.push_back(d_edge[next_ind]);
+	added_flags.insert(start);
+	added_flags.insert(prev_ind);
+	added_flags.insert(next_ind);
+	index_count += 3;
+	if(d_edge[prev_ind + 1] != -1) construct_help(d_edge[prev_ind + 1]);
+	if (d_edge[next_ind + 1] != -1) construct_help(d_edge[next_ind + 1]);
+	if (d_edge[start + 1] != -1) construct_help(d_edge[start + 1]);
+}
+
+unsigned int Polygon::prev(unsigned int ind) {
+	return (ind % 6 == 0) ? (ind + 4) : (ind - 2);
+}
+
+unsigned int Polygon::next(unsigned int ind) {
+	return (ind % 6 == 4) ? (ind - 4) : (ind + 2);
+}
+
 void Polygon::Init() {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -82,18 +134,19 @@ void Polygon::Init() {
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * this->vertex_count, &vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertex_count, &vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, &indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * index_count, &indices[0], GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	for (auto ind : vertices) std::cout << ind << "\n";
+	for (auto ind : indices) std::cout << ind << "\n";
 }
 
 //checking whether an edge is a perimeter
 bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
-	std::cout << "test" << perimeters[v1] << " " << perimeters[v2] << " " << bool(outer[v1].count(v2)) << "\n";
 	return perimeters[v1] && perimeters[v2] && bool(outer[v1].count(v2));
 }
 
@@ -102,6 +155,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	//Idea: get a set of all the adjacents of v2, get the list of edges that need to be added
 	//		replace the edges of v2 in the list with the edges in that list, then the rest
 	//      of the edges will be set to 0,0, which is to be ignored
+	//notify start of normal modification
+	normal_mod.push(0);
 	this->contracts.push(v2);
 	this->contracts.push(v1);
 	discarded.insert(v2);
@@ -119,6 +174,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				if (perimeters[v2] && ((vert == v1 && perimeters[endvert]) || (endvert == v1 && perimeters[vert]))) {
 					outer[vert].insert(endvert);
 					outer[endvert].insert(vert);
+					normal_mod.push(vert);
+					normal_mod.push(endvert);
 				}
 				if (!edges[vert].count(endvert)) {
 					to_add.push_back(vert);
@@ -172,6 +229,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				if (perimeters[to_add[add_index]] && perimeters[to_add[add_index + 1]]) {
 					outer[to_add[add_index]].insert(to_add[add_index + 1]);
 					outer[to_add[add_index + 1]].insert(to_add[add_index]);
+					normal_mod.push(to_add[add_index]);
+					normal_mod.push(to_add[add_index + 1]);
 				}
 				indices[i] = to_add[add_index];
 				indices[i + 1] = to_add[add_index + 1];
@@ -211,7 +270,6 @@ void Polygon::Split() {
 	this->contracts.pop(); 
 	unsigned int v2 = this->contracts.top();
 	this->contracts.pop();
-	std::cout << "SPLITTING " << v2 << " OUT OF " << v1 << " WITH HEADS "<< head1 << " " << head2 << "\n";
 	//Idea: check the heads
 	perimeters[v2] = p2;
 	perimeters[v1] = p1;
@@ -223,16 +281,16 @@ void Polygon::Split() {
 		indices.push_back(v2);
 		edges[v2].insert(v1);
 		edges[v1].insert(v2);
-		if (perimeters[v2] && perimeters[v1]) {
-			outer[v2].insert(v1);
-			outer[v1].insert(v2);
-		}
 		index_count += 2;
+		perim_split();
 		refresh();
 		return;
 	}
 	if (head1 == 0) {
-		if (head2 == 0) return;
+		if (head2 == 0) {
+			perim_split();
+			return;
+		}
 		// if head1 is 0, head2 is non-zero, split generates only one triangle
 		else {
 			// y = mx + b
@@ -282,7 +340,23 @@ void Polygon::Split() {
 		edges[v1].insert(v2);
 		index_count += 6;
 	}
+	perim_split();
 	refresh();
+}
+
+void Polygon::perim_split() {
+	//read the perimeter stack
+	while (normal_mod.top() != 0) {
+		unsigned int mod1 = normal_mod.top();
+		normal_mod.pop();
+		unsigned int mod2 = normal_mod.top();
+		normal_mod.pop();
+		if (outer[mod1].count(mod2)) {
+			outer[mod1].erase(mod2);
+			outer[mod2].erase(mod1);
+		}
+	}
+	normal_mod.pop();
 }
 
 bool Polygon::is_above(unsigned int index, float m, float b) {
@@ -318,8 +392,6 @@ void Polygon::splitter(unsigned int v1, unsigned int v2, unsigned int head1, uns
 }
 
 void Polygon::refresh() {
-	for (int i = 0; i < indices.size(); i += 2) std::cout << indices[i] << " " << indices[i + 1] << " " << is_perim(indices[i], indices[i + 1]) << "\n";
-	std::cout << "\n";
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, &indices[0], GL_STATIC_DRAW);
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind

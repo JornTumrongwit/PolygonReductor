@@ -17,7 +17,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const bool wireframe = true;
 const bool dot = true;
-const char* filepath = "test_graph.grp";
+const char* filepath = "bigger_graph.grp";
 bool r_pressed = false;
 bool z_pressed = false;
 // set up vertex data (and buffer(s)) and configure vertex attributes
