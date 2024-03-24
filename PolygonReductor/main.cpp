@@ -17,7 +17,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const bool wireframe = true;
 const bool dot = true;
-const char* filepath = "bigger_graph.grp";
+const char* filepath = "test_graph.grp";
 bool r_pressed = false;
 bool z_pressed = false;
 // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -93,7 +93,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && r_pressed == true)
         r_pressed = false;
     else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && r_pressed == false) {
-        polygon.Contract(1, 2);
+        polygon.collapse(2);
         r_pressed = true;
     }
 

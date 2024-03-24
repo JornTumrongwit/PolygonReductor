@@ -49,33 +49,33 @@ void Polygon::parse(const char* filepath) {
 			//storing the halfedges
 			fscanf_s(fp, "%d %d %d", &ix, &iy, &iz);
 			//store in the edgemap
-			edgemap[iy][ix] = d_edge.size();
-			edgemap[iz][iy] = d_edge.size() + 2;
-			edgemap[ix][iz] = d_edge.size() + 4;
+			edgemap[iy][ix] = d_edge.size()/2;
+			edgemap[iz][iy] = d_edge.size()/2 + 1;
+			edgemap[ix][iz] = d_edge.size()/2 + 2;
 			//store the vertex, and twin
-			d_edge.push_back(ix);
+			d_edge.push_back(iy);
 			if (edgemap.find(ix) != edgemap.end()) {
 				if (edgemap[ix].find(iy) != edgemap[ix].end()) {
-					d_edge[edgemap[ix][iy] + 1] = d_edge.size() - 1;
+					d_edge[edgemap[ix][iy]*2 + 1] = (d_edge.size() - 1)/2;
 					d_edge.push_back(edgemap[ix][iy]);
 				}
 				else d_edge.push_back(-1);
 			} else d_edge.push_back(-1);
 
-			d_edge.push_back(iy);
+			d_edge.push_back(iz);
 			if (edgemap.find(iy) != edgemap.end()) {
 				if (edgemap[iy].find(iz) != edgemap[iy].end()) {
-					d_edge[edgemap[iy][iz] + 1] = d_edge.size() - 1;
+					d_edge[edgemap[iy][iz]*2 + 1] = (d_edge.size() - 1)/2;
 					d_edge.push_back(edgemap[iy][iz]);
 				}
 				else d_edge.push_back(-1);
 			}
 			else d_edge.push_back(-1);
 
-			d_edge.push_back(iz);
+			d_edge.push_back(ix);
 			if (edgemap.find(iz) != edgemap.end()) {
 				if (edgemap[iz].find(ix) != edgemap[iz].end()) {
-					d_edge[edgemap[iz][ix] + 1] = d_edge.size() - 1;
+					d_edge[edgemap[iz][ix]*2 + 1] = (d_edge.size() - 1)/2;
 					d_edge.push_back(edgemap[iz][ix]);
 				}
 				else d_edge.push_back(-1);
@@ -107,24 +107,31 @@ void Polygon::construct_help(unsigned int start) {
 	if (added_flags.count(start)) return;
 	unsigned int prev_ind = prev(start);
 	unsigned int next_ind = next(start);
-	indices.push_back(d_edge[prev_ind]);
-	indices.push_back(d_edge[start]);
-	indices.push_back(d_edge[next_ind]);
+	//push all the triangle indices
+	indices.push_back(d_edge[prev_ind*2]);
+	indices.push_back(d_edge[start*2]);
+	indices.push_back(d_edge[next_ind*2]);
+	//flag that this triangle is added
 	added_flags.insert(start);
 	added_flags.insert(prev_ind);
 	added_flags.insert(next_ind);
 	index_count += 3;
-	if(d_edge[prev_ind + 1] != -1) construct_help(d_edge[prev_ind + 1]);
-	if (d_edge[next_ind + 1] != -1) construct_help(d_edge[next_ind + 1]);
-	if (d_edge[start + 1] != -1) construct_help(d_edge[start + 1]);
+	//construct the other triangles next to it
+	if(d_edge[prev_ind*2 + 1] != -1) construct_help(d_edge[prev_ind*2 + 1]);
+	if (d_edge[next_ind*2 + 1] != -1) construct_help(d_edge[next_ind*2 + 1]);
+	if (d_edge[start*2 + 1] != -1) construct_help(d_edge[start*2 + 1]);
 }
 
-unsigned int Polygon::prev(unsigned int ind) {
-	return (ind % 6 == 0) ? (ind + 4) : (ind - 2);
+int Polygon::prev(unsigned int ind) {
+	return (ind % 3 == 0) ? (ind + 2) : (ind - 1);
 }
 
-unsigned int Polygon::next(unsigned int ind) {
-	return (ind % 6 == 4) ? (ind - 4) : (ind + 2);
+int Polygon::next(unsigned int ind) {
+	return (ind % 3 == 2) ? (ind - 2) : (ind + 1);
+}
+
+int Polygon::twin(unsigned int ind) {
+	return d_edge[ind* 2 + 1];
 }
 
 void Polygon::Init() {
@@ -149,109 +156,35 @@ bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
 	return perimeters[v1] && perimeters[v2] && bool(outer[v1].count(v2));
 }
 
-// Contract the specified edge by moving v2 into v1
-void Polygon::Contract(unsigned int v1, unsigned int v2) {
-	//Idea: get a set of all the adjacents of v2, get the list of edges that need to be added
-	//		replace the edges of v2 in the list with the edges in that list, then the rest
-	//      of the edges will be set to 0,0, which is to be ignored
-	//notify start of normal modification
-	normal_mod.push(0);
-	this->contracts.push(v2);
-	this->contracts.push(v1);
-	discarded.insert(v2);
-	bool p1 = perimeters[v1];
-	bool p2 = perimeters[v2];
-	unsigned int vertex_head = 0, head1 = 0, head2 = 0;
-	std::set<unsigned int> adj = edges[v2];
-	std::vector<unsigned int> to_add;
-	std::vector<unsigned int> deletes;
-	for (auto vert: adj) {
-		for (auto endvert : adj) {
-			//check only one way
-			//if not same vertex and not yet adjacent
-			if (vert < endvert && (vert == v1 || endvert == v1) && !discarded.count(vert)) {
-				if (perimeters[v2] && ((vert == v1 && perimeters[endvert]) || (endvert == v1 && perimeters[vert]))) {
-					outer[vert].insert(endvert);
-					outer[endvert].insert(vert);
-					normal_mod.push(vert);
-					normal_mod.push(endvert);
-				}
-				if (!edges[vert].count(endvert)) {
-					to_add.push_back(vert);
-					to_add.push_back(endvert);
-					edges[endvert].insert(vert);
-					edges[vert].insert(endvert);
-				}
-				else {
-					//this is a triangle head
-					if (head1 == 0) {
-						if (vert == v1) head1 = endvert;
-						else head1 = vert;
-					}
-					else {
-						head2 = vert;
-						if (vert == v1) head2 = endvert;
-						else head2 = vert;
-					}
-					if (vert == v1) this->contracts.push(endvert);
-					else this->contracts.push(vert);
-					vertex_head++;
-				}
-			}
-		}
-		//remove this vertex from adjacency
-		edges[vert].erase(v2);
+// Contract the specified edge
+void Polygon::collapse(unsigned int edge){
+	int eng = twin(edge);
+	//move all the edges to become twins of each other
+	if(twin(prev(edge)) > 0) d_edge[twin(prev(edge)) * 2 + 1] = twin(next(edge));
+	if(twin(next(edge)) > 0) d_edge[twin(next(edge)) * 2 + 1] = twin(prev(edge));
+	if (eng != -1) {
+		if (twin(prev(eng)) > 0) d_edge[twin(prev(eng)) * 2 + 1] = twin(next(eng));
+		if (twin(next(eng)) > 0) d_edge[twin(next(eng)) * 2 + 1] = twin(prev(eng));
 	}
-	bool collapsed = false;
-	//means that some perimeter quality changed
-	if (vertex_head > 0) {
-		collapsed = true;
-		if (perimeters[v2]) {
-			perimeters[v1] = true;
+	//changing the vertex
+	unsigned int newvtx = d_edge[edge * 2];
+	//spin clockwise until the start is found
+	int the = edge;
+	if (d_edge[the * 2 + 1] != -1) {
+		the = next(twin(the));
+		while (twin(next(twin(the))) != -1 || next(twin(the)) != edge) {
+			the = next(twin(the));
 		}
 	}
-	if (vertex_head == 0 && edges[v2].count(v1)) {
-		//single line collapse
-		//enocde via head = v1
-		this->contracts.push(v1);
-		vertex_head = 1;
+	//counterclockwise spin while adjusting the vertex
+	int starter = the;
+	d_edge[twin(the) * 2] = newvtx;
+	the = twin(prev(the));
+	while (the != starter || the != -1) {
+		d_edge[the * 2] = newvtx;
+		the = twin(prev(the));
 	}
-	while (vertex_head < 2) {
-		this->contracts.push(0); //signify single triangle collapsed
-		vertex_head++;
-	}
-	edges.erase(v2);
-	unsigned int add_index = 0;
-	for (unsigned int i = 0; i < this->index_count; i+=2) {
-		if (indices[i] == v2 || indices[i+1] == v2) {
-			if (add_index < to_add.size()) {
-				if (perimeters[to_add[add_index]] && perimeters[to_add[add_index + 1]]) {
-					outer[to_add[add_index]].insert(to_add[add_index + 1]);
-					outer[to_add[add_index + 1]].insert(to_add[add_index]);
-					normal_mod.push(to_add[add_index]);
-					normal_mod.push(to_add[add_index + 1]);
-				}
-				indices[i] = to_add[add_index];
-				indices[i + 1] = to_add[add_index + 1];
-				add_index += 2;
-			}
-			else {
-				deletes.push_back(i);
-				deletes.push_back(i+1);
-			}
-		}
-	}
-	unsigned int down = 0;
-	for (unsigned int i = 0; i < deletes.size(); i++) {
-		unsigned int index = deletes[i] - down;
-		indices.erase(std::next(indices.begin(), index));
-		down++;
-		index_count--;
-	}
-	this->contracts.push(p1);
-	this->contracts.push(p2);
-	if (head1 != 0 && edges[head1].size() == 1) Contract(v1, head1);
-	if (head2 != 0 && edges[head2].size() == 1) Contract(v1, head2);
+	construct();
 	refresh();
 }
 

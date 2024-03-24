@@ -20,11 +20,13 @@ public:
 	//construction helper
 	void construct_help(unsigned int start);
 	//getting previous edge
-	unsigned int prev(unsigned int ind);
+	int prev(unsigned int ind);
 	//geting the next edge
-	unsigned int next(unsigned int ind);
+	int next(unsigned int ind);
+	//geting the twin edge
+	int twin(unsigned int ind);
 	//collapsing edge
-	void Contract(unsigned int v1, unsigned int v2);
+	void collapse(unsigned int edge);
 	//splitting vertex from queue
 	void Split();
 	//deleting buffers
