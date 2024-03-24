@@ -97,6 +97,7 @@ Polygon::Polygon(const char* filepath) {
 
 void Polygon::construct() {
 	indices.clear();
+	index_count = 0;
 	added_flags.clear();
 	construct_help(starter);
 }
@@ -141,8 +142,6 @@ void Polygon::Init() {
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	for (auto ind : vertices) std::cout << ind << "\n";
-	for (auto ind : indices) std::cout << ind << "\n";
 }
 
 //checking whether an edge is a perimeter
