@@ -96,6 +96,7 @@ Polygon::Polygon(const char* filepath) {
 }
 
 void Polygon::construct() {
+	std::cout << "Start edge is: " << starter << "\n";
 	indices.clear();
 	index_count = 0;
 	added_flags.clear();
@@ -135,8 +136,7 @@ int Polygon::twin(unsigned int ind) {
 }
 
 void Polygon::Init() {
-	for (auto vtx : d_edge) std::cout << vtx << "\n";
-	std::cout << "\n";
+	printedge();
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -162,10 +162,10 @@ bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
 void Polygon::collapse(unsigned int edge){
 	//moving the starting edge (where it moves doesn't matter as long as it doesn't start at the deleted triangle
 	//cannot use: this edge, its twin, this prev, this next
-	if (starter == edge || starter == twin(edge) || starter == prev(edge) || starter == next(edge)){
+	if (starter == edge || starter == prev(edge) || starter == next(edge)){
 		starter = twin(prev(edge));
 		if (starter == -1) {
-			twin(next(edge));
+			starter = twin(next(edge));
 			if (starter == -1) {
 				//just use something from the other triangle and pray for the best
 				if (twin(edge) == -1) {
@@ -173,7 +173,17 @@ void Polygon::collapse(unsigned int edge){
 					std::cout << "DON'T COLLAPSE THIS I DON'T WANNA DIIIIIIIIIIIIIIIIIIIE!";
 					return;
 				}
-				starter = prev(twin(edge));
+				starter = twin(edge);
+			}
+		}
+	}
+	if (starter == twin(edge) || starter == prev(twin(edge)) || starter == next(twin(edge))) {
+		starter = twin(prev(twin(edge)));
+		if (starter == -1) {
+			starter = twin(next(twin(edge)));
+			if (starter == -1) {
+				std::cout << "DON'T COLLAPSE THIS I DON'T WANNA DIIIIIIIIIIIIIIIIIIIE!";
+				return;
 			}
 		}
 	}
@@ -189,35 +199,42 @@ void Polygon::collapse(unsigned int edge){
 	//changing the vertex
 	unsigned int newvtx = d_edge[edge * 2];
 	std::cout <<"NEW VERTEX: "<< d_edge[edge * 2] << "\n\n";
-	//spin clockwise until the start is found
-	int the = edge;
-	if (d_edge[the * 2 + 1] != -1) {
-		the = next(twin(the));
-		while (twin(the) != -1 && twin(the) != edge) {
-			std::cout << "CURRENT THE: " << the << "\n";
-			the = next(twin(the));
+	//spin counter clockwise
+	int start = prev(edge);
+	int the = start;
+	bool moved = false;
+	std::cout << "GOING COUNTERCLOCKWISE\n";
+	if (twin(the) != -1) {
+		moved = true;
+		start = prev(twin(start));
+		the = start;
+		std::cout << "STARTER IS: " << start << "\n";
+		std::cout << "MODIFYING: " << the << " MOVING " << d_edge[the * 2] << " AS SIGNALED BY " << the << "\n";
+		d_edge[the * 2] = newvtx;
+		if (twin(the) != -1) the = prev(twin(the));
+		while (the != start) {
+			std::cout << "MODIFYING: " << the << " MOVING " << d_edge[the * 2] << " AS SIGNALED BY " << the << "\n";
+			d_edge[the* 2] = newvtx;
+			if (twin(the) != -1) the = prev(twin(the));
+			else break;
 		}
-		std::cout << "STOPPED BECAUSE: " << twin(the) << " " << twin(the) << "\n";
+		std::cout << "STOPPED BECAUSE: " << (twin(the) != -1) << " " << (the != start) << "\n";
 	}
-	std::cout << "STARTING MOVING VERTEX AT EDGE: " << the << "\n";
-	//counterclockwise spin while adjusting the vertex
-	int start = the;
-	std::cout << "MODIFYING: " << prev(the) << " MOVING " << d_edge[prev(the) * 2] << " AS SIGNALED BY " << the << "\n";
-	d_edge[prev(the) * 2] = newvtx;
-	the = twin(prev(the));
-	while (the != start && the >= 0) {
-		if (the == edge) {
-			the = twin(prev(the));
-			continue;
+	std::cout << "STARTING MOVING CLOCKWISE\n";
+	//spin clockwise if not stopping because of start, and that edge can rotate the other way
+	if ((the != start || !moved) && (twin(edge) != -1)) {
+		start = next(twin(edge));
+		the = start;
+		std::cout << "STARTING AT: " << start << "\n";
+		if (twin(the) != -1) {
+			std::cout << "MODIFYING: " << twin(the) << " MOVING " << d_edge[twin(the) * 2] << " AS SIGNALED BY " << the << "\n";
+			d_edge[twin(the) * 2] = newvtx;
+			the = next(twin(edge));
 		}
-		std::cout << "MODIFYING: " << prev(the) << " MOVING " << d_edge[prev(the) * 2] << " AS SIGNALED BY " << the << "\n";
-		d_edge[prev(the) * 2] = newvtx;
-		the = twin(prev(the));
 	}
 	construct();
 	refresh();
-	for (auto vtx : d_edge) std::cout << vtx << "\n";
-	std::cout << "\n";
+	printedge();
 }
 
 bool Polygon::boundary(int edge) {
@@ -225,13 +242,27 @@ bool Polygon::boundary(int edge) {
 }
 
 void Polygon::split() {
+	if (contracts.empty()) return;
 	int edge = contracts.top();
 	contracts.pop();
-
+	int eng = twin(edge);
+	if (twin(prev(edge)) >= 0) d_edge[twin(prev(edge)) * 2 + 1] = prev(edge);
+	if (twin(next(edge)) >= 0) d_edge[twin(next(edge)) * 2 + 1] = next(edge);
+	if (eng != -1) {
+		if (twin(prev(eng)) >= 0) d_edge[twin(prev(eng)) * 2 + 1] = prev(eng);
+		if (twin(next(eng)) >= 0) d_edge[twin(next(eng)) * 2 + 1] = next(eng);
+	}
 	construct();
 	refresh();
+	printedge();
 }
 
+void Polygon::printedge() {
+	for (int i = 0; i * 2 < d_edge.size(); i++) {
+		std::cout << i << ": " << d_edge[i*2] << " " << d_edge[i*2+1] << "\n";
+	}
+	std::cout << "\n";
+}
 
 void Polygon::refresh() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);

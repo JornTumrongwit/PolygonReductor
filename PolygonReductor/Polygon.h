@@ -31,6 +31,8 @@ public:
 	bool boundary(int edge);
 	//splitting vertex from queue
 	void split();
+	// better have a function to print out smth
+	void printedge();
 	//deleting buffers
 	void DeleteBuffer();
 	//refresh buffers
