@@ -135,6 +135,8 @@ int Polygon::twin(unsigned int ind) {
 }
 
 void Polygon::Init() {
+	for (auto vtx : d_edge) std::cout << vtx << "\n";
+	std::cout << "\n";
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -168,24 +170,32 @@ void Polygon::collapse(unsigned int edge){
 	}
 	//changing the vertex
 	unsigned int newvtx = d_edge[edge * 2];
+	std::cout <<"NEW VERTEX: "<< d_edge[edge * 2] << "\n\n";
 	//spin clockwise until the start is found
 	int the = edge;
 	if (d_edge[the * 2 + 1] != -1) {
 		the = next(twin(the));
-		while (twin(next(twin(the))) != -1 || next(twin(the)) != edge) {
+		while (twin(the) != -1 && twin(the) != edge) {
+			std::cout << "CURRENT THE: " << the << "\n";
 			the = next(twin(the));
 		}
+		std::cout << "SToPPED BECAUSE: " << twin(the) << " " << twin(the) << "\n";
 	}
+	std::cout << "STARTING MOVING VERTEX AT EDGE: " << the << "\n";
 	//counterclockwise spin while adjusting the vertex
-	int starter = the;
-	d_edge[twin(the) * 2] = newvtx;
+	int start = the;
+	d_edge[prev(the) * 2] = newvtx;
 	the = twin(prev(the));
-	while (the != starter || the != -1) {
-		d_edge[the * 2] = newvtx;
+	while (the != start && the >= 0) {
+		std::cout << "MODIFYING: " << prev(the) << " MOVING " << d_edge[prev(the) * 2] << " AS SIGNALED BY " << the << "\n";
+		d_edge[prev(the) * 2] = newvtx;
 		the = twin(prev(the));
 	}
+	starter = 20;
 	construct();
 	refresh();
+	for (auto vtx : d_edge) std::cout << vtx << "\n";
+	std::cout << "\n";
 }
 
 void Polygon::Split() {
