@@ -27,8 +27,10 @@ public:
 	int twin(unsigned int ind);
 	//collapsing edge
 	void collapse(unsigned int edge);
+	//check if something is a boundary
+	bool boundary(int edge);
 	//splitting vertex from queue
-	void Split();
+	void split();
 	//deleting buffers
 	void DeleteBuffer();
 	//refresh buffers

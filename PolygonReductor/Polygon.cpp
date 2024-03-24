@@ -170,19 +170,21 @@ void Polygon::collapse(unsigned int edge){
 				//just use something from the other triangle and pray for the best
 				if (twin(edge) == -1) {
 					//giveup and cry
+					std::cout << "DON'T COLLAPSE THIS I DON'T WANNA DIIIIIIIIIIIIIIIIIIIE!";
 					return;
 				}
 				starter = prev(twin(edge));
 			}
 		}
 	}
+	contracts.push(edge);
 	int eng = twin(edge);
 	//move all the edges to become twins of each other
-	if(twin(prev(edge)) > 0) d_edge[twin(prev(edge)) * 2 + 1] = twin(next(edge));
-	if(twin(next(edge)) > 0) d_edge[twin(next(edge)) * 2 + 1] = twin(prev(edge));
+	if(twin(prev(edge)) >= 0) d_edge[twin(prev(edge)) * 2 + 1] = twin(next(edge));
+	if(twin(next(edge)) >= 0) d_edge[twin(next(edge)) * 2 + 1] = twin(prev(edge));
 	if (eng != -1) {
-		if (twin(prev(eng)) > 0) d_edge[twin(prev(eng)) * 2 + 1] = twin(next(eng));
-		if (twin(next(eng)) > 0) d_edge[twin(next(eng)) * 2 + 1] = twin(prev(eng));
+		if (twin(prev(eng)) >= 0) d_edge[twin(prev(eng)) * 2 + 1] = twin(next(eng));
+		if (twin(next(eng)) >= 0) d_edge[twin(next(eng)) * 2 + 1] = twin(prev(eng));
 	}
 	//changing the vertex
 	unsigned int newvtx = d_edge[edge * 2];
@@ -195,14 +197,19 @@ void Polygon::collapse(unsigned int edge){
 			std::cout << "CURRENT THE: " << the << "\n";
 			the = next(twin(the));
 		}
-		std::cout << "SToPPED BECAUSE: " << twin(the) << " " << twin(the) << "\n";
+		std::cout << "STOPPED BECAUSE: " << twin(the) << " " << twin(the) << "\n";
 	}
 	std::cout << "STARTING MOVING VERTEX AT EDGE: " << the << "\n";
 	//counterclockwise spin while adjusting the vertex
 	int start = the;
+	std::cout << "MODIFYING: " << prev(the) << " MOVING " << d_edge[prev(the) * 2] << " AS SIGNALED BY " << the << "\n";
 	d_edge[prev(the) * 2] = newvtx;
 	the = twin(prev(the));
 	while (the != start && the >= 0) {
+		if (the == edge) {
+			the = twin(prev(the));
+			continue;
+		}
 		std::cout << "MODIFYING: " << prev(the) << " MOVING " << d_edge[prev(the) * 2] << " AS SIGNALED BY " << the << "\n";
 		d_edge[prev(the) * 2] = newvtx;
 		the = twin(prev(the));
@@ -213,140 +220,18 @@ void Polygon::collapse(unsigned int edge){
 	std::cout << "\n";
 }
 
-void Polygon::Split() {
-	if (this->contracts.size() <= 0) return;
-	bool p2 = this->contracts.top();
-	this->contracts.pop();
-	bool p1 = this->contracts.top();
-	this->contracts.pop();
-	unsigned int head1 = this->contracts.top();
-	this->contracts.pop();
-	unsigned int head2 = this->contracts.top();
-	this->contracts.pop();
-	unsigned int v1 = this->contracts.top();
-	this->contracts.pop(); 
-	unsigned int v2 = this->contracts.top();
-	this->contracts.pop();
-	//Idea: check the heads
-	perimeters[v2] = p2;
-	perimeters[v1] = p1;
-	// if head1 is 0, and head2 is 0, blank collapse, skip
-	// if head2 = v1, then it is a single edge
-	if (head2 == v1) {
-		// connect v1 to v2
-		indices.push_back(v1);
-		indices.push_back(v2);
-		edges[v2].insert(v1);
-		edges[v1].insert(v2);
-		index_count += 2;
-		perim_split();
-		refresh();
-		return;
-	}
-	if (head1 == 0) {
-		if (head2 == 0) {
-			perim_split();
-			return;
-		}
-		// if head1 is 0, head2 is non-zero, split generates only one triangle
-		else {
-			// y = mx + b
-			// m = rise/run
-			float m = (vertices[v2 * 3 + 1] - vertices[head2 * 3 + 1]) / (vertices[v2 * 3] - vertices[head2 * 3]);
-			// b = y-mx
-			float b = vertices[v2 * 3 + 1] - m * vertices[v2 * 3];
-			// connect v2 to head2
-			indices.push_back(v2);
-			indices.push_back(head2); 
-			edges[v2].insert(head2);
-			edges[head2].insert(v2);
-			// connect v1 to v2
-			indices.push_back(v1);
-			indices.push_back(v2);
-			edges[v2].insert(v1);
-			edges[v1].insert(v2);
-			splitter(v1, v2, head1, head2, m, b);
-			index_count += 4;
-		}
-	}
-	// else, have both heads be the end vertices of a line
-	// get the line equation, check which side the vertices are on, then generate the edges or move according to that
-	else {
-		// line will be made from head1 and head2
-		// y = mx + b
-		// m = rise/run
-		float m = (vertices[head1 * 3 + 1] - vertices[head2 * 3 + 1]) / (vertices[head1 * 3] - vertices[head2 * 3]);
-		// b = y-mx
-		float b = vertices[head2 * 3 + 1] - m * vertices[head2 * 3];
-		splitter(v1, v2, head1, head2, m, b);
-		// connect v2 to head1
-		indices.push_back(v2);
-		indices.push_back(head1);
-		edges[v2].insert(head1);
-		edges[head1].insert(v2);
+bool Polygon::boundary(int edge) {
+	return (twin(edge) == -1);
+}
 
-		// connect v2 to head2
-		indices.push_back(v2);
-		indices.push_back(head2);
-		edges[head2].insert(v2);
-		edges[v2].insert(head2);
-		// connect v1 to v2
-		indices.push_back(v1);
-		indices.push_back(v2);
-		edges[v2].insert(v1);
-		edges[v1].insert(v2);
-		index_count += 6;
-	}
-	perim_split();
+void Polygon::split() {
+	int edge = contracts.top();
+	contracts.pop();
+
+	construct();
 	refresh();
 }
 
-void Polygon::perim_split() {
-	//read the perimeter stack
-	while (normal_mod.top() != 0) {
-		unsigned int mod1 = normal_mod.top();
-		normal_mod.pop();
-		unsigned int mod2 = normal_mod.top();
-		normal_mod.pop();
-		if (outer[mod1].count(mod2)) {
-			outer[mod1].erase(mod2);
-			outer[mod2].erase(mod1);
-		}
-	}
-	normal_mod.pop();
-}
-
-bool Polygon::is_above(unsigned int index, float m, float b) {
-	return m * vertices[index * 3] + b >= vertices[index * 3 + 1];
-}
-
-void Polygon::splitter(unsigned int v1, unsigned int v2, unsigned int head1, unsigned int head2, float m, float b){
-	bool v1_more = is_above(v1, m, b);
-	// check if any of the vertex that connects to v1 should move to connect to v2
-	for (int i = 0; i < index_count; i += 2) {
-		int mod = -1;
-		if (indices[i] == v1) {
-			mod = 0;
-		}
-		else if (indices[i + 1] == v1) {
-			mod = 1;
-		}
-		//v1 is in i + mod, head2 is in i + (1-mod)
-		if (mod >= 0) {
-			//if the pair is the head itself, ignore all of this
-			if (indices[i + 1 - mod] == head2 || indices[i + 1 - mod] == head1) continue;
-			//check if its pair is not on the same side of the line
-			//if not, move to v2
-			if (is_above(indices[i + 1 - mod], m, b) != v1_more) {
-				edges[v2].insert(indices[i + 1 - mod]);
-				edges[indices[i + 1 - mod]].erase(v1);
-				edges[indices[i + 1 - mod]].insert(v2);
-				edges[v1].erase(indices[i + 1 - mod]);
-				indices[i + mod] = v2;
-			}
-		}
-	}
-}
 
 void Polygon::refresh() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);

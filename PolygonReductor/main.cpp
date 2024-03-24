@@ -93,14 +93,14 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && r_pressed == true)
         r_pressed = false;
     else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && r_pressed == false) {
-        polygon.collapse(8);
+        polygon.collapse(13);
         r_pressed = true;
     }
 
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_RELEASE && z_pressed == true)
         z_pressed = false;
     else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS && z_pressed == false) {
-        polygon.Split();
+        polygon.split();
         z_pressed = true;
     }
 }
