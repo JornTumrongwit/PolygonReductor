@@ -45,7 +45,7 @@ public:
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;
 private:
-	unsigned int starter = 0;
+	int starter = 0;
 	std::vector<float> vertices;
 	std::vector<unsigned int> indices;
 	//Directed edges

@@ -160,6 +160,22 @@ bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
 
 // Contract the specified edge
 void Polygon::collapse(unsigned int edge){
+	//moving the starting edge (where it moves doesn't matter as long as it doesn't start at the deleted triangle
+	//cannot use: this edge, its twin, this prev, this next
+	if (starter == edge || starter == twin(edge) || starter == prev(edge) || starter == next(edge)){
+		starter = twin(prev(edge));
+		if (starter == -1) {
+			twin(next(edge));
+			if (starter == -1) {
+				//just use something from the other triangle and pray for the best
+				if (twin(edge) == -1) {
+					//giveup and cry
+					return;
+				}
+				starter = prev(twin(edge));
+			}
+		}
+	}
 	int eng = twin(edge);
 	//move all the edges to become twins of each other
 	if(twin(prev(edge)) > 0) d_edge[twin(prev(edge)) * 2 + 1] = twin(next(edge));
@@ -191,7 +207,6 @@ void Polygon::collapse(unsigned int edge){
 		d_edge[prev(the) * 2] = newvtx;
 		the = twin(prev(the));
 	}
-	starter = 20;
 	construct();
 	refresh();
 	for (auto vtx : d_edge) std::cout << vtx << "\n";

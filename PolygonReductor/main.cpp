@@ -93,7 +93,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && r_pressed == true)
         r_pressed = false;
     else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && r_pressed == false) {
-        polygon.collapse(1);
+        polygon.collapse(8);
         r_pressed = true;
     }
 
