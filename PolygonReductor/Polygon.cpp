@@ -17,7 +17,7 @@ void Polygon::parse(const char* filepath) {
 	FILE* fp;
 	int c1, c2;
 	float x, y, z;
-	unsigned int ix, iy;
+	unsigned int ix, iy, iz;
 
 	fopen_s(&fp, filepath, "rb");
 
@@ -44,12 +44,16 @@ void Polygon::parse(const char* filepath) {
 			vertex_count += 3;
 		}
 		else if ((c1 == 'i') && (c2 == ' ')) {
-			fscanf_s(fp, "%d %d", &ix, &iy);
+			fscanf_s(fp, "%d %d %d", &ix, &iy, &iz);
 			indices.push_back(ix);
 			indices.push_back(iy);
 			edges[ix].insert(iy);
 			edges[iy].insert(ix);
 			index_count += 2;
+			if (iz) {
+				outer[ix].insert(iy);
+				outer[iy].insert(ix); 
+			}
 		}
 		else if ((c1 == 'p') && (c2 == ' ')) {
 			fscanf_s(fp, "%d", &ix);
@@ -87,6 +91,12 @@ void Polygon::Init() {
 	glEnableVertexAttribArray(0);
 }
 
+//checking whether an edge is a perimeter
+bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
+	std::cout << "test" << perimeters[v1] << " " << perimeters[v2] << " " << bool(outer[v1].count(v2)) << "\n";
+	return perimeters[v1] && perimeters[v2] && bool(outer[v1].count(v2));
+}
+
 // Contract the specified edge by moving v2 into v1
 void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	//Idea: get a set of all the adjacents of v2, get the list of edges that need to be added
@@ -95,6 +105,8 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	this->contracts.push(v2);
 	this->contracts.push(v1);
 	discarded.insert(v2);
+	bool p1 = perimeters[v1];
+	bool p2 = perimeters[v2];
 	unsigned int vertex_head = 0, head1 = 0, head2 = 0;
 	std::set<unsigned int> adj = edges[v2];
 	std::vector<unsigned int> to_add;
@@ -104,6 +116,10 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 			//check only one way
 			//if not same vertex and not yet adjacent
 			if (vert < endvert && (vert == v1 || endvert == v1) && !discarded.count(vert)) {
+				if (perimeters[v2] && ((vert == v1 && perimeters[endvert]) || (endvert == v1 && perimeters[vert]))) {
+					outer[vert].insert(endvert);
+					outer[endvert].insert(vert);
+				}
 				if (!edges[vert].count(endvert)) {
 					to_add.push_back(vert);
 					to_add.push_back(endvert);
@@ -112,8 +128,15 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 				}
 				else {
 					//this is a triangle head
-					if (head1 == 0) head1 = endvert;
-					else head2 = endvert;
+					if (head1 == 0) {
+						if (vert == v1) head1 = endvert;
+						else head1 = vert;
+					}
+					else {
+						head2 = vert;
+						if (vert == v1) head2 = endvert;
+						else head2 = vert;
+					}
 					if (vert == v1) this->contracts.push(endvert);
 					else this->contracts.push(vert);
 					vertex_head++;
@@ -127,8 +150,11 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	//means that some perimeter quality changed
 	if (vertex_head > 0) {
 		collapsed = true;
+		if (perimeters[v2]) {
+			perimeters[v1] = true;
+		}
 	}
-	if (vertex_head == 0 && edges[v2].find(v1) != edges[v2].end()) {
+	if (vertex_head == 0 && edges[v2].count(v1)) {
 		//single line collapse
 		//enocde via head = v1
 		this->contracts.push(v1);
@@ -143,6 +169,10 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 	for (unsigned int i = 0; i < this->index_count; i+=2) {
 		if (indices[i] == v2 || indices[i+1] == v2) {
 			if (add_index < to_add.size()) {
+				if (perimeters[to_add[add_index]] && perimeters[to_add[add_index + 1]]) {
+					outer[to_add[add_index]].insert(to_add[add_index + 1]);
+					outer[to_add[add_index + 1]].insert(to_add[add_index]);
+				}
 				indices[i] = to_add[add_index];
 				indices[i + 1] = to_add[add_index + 1];
 				add_index += 2;
@@ -160,25 +190,11 @@ void Polygon::Contract(unsigned int v1, unsigned int v2) {
 		down++;
 		index_count--;
 	}
-	if (collapsed) {
-		this->contracts.push(perimeters[v1]);
-		this->contracts.push(perimeters[v2]);
-		if (perimeters[v1] || perimeters[v2]) {
-			perimeters[v2] = true;
-			perimeters[v1] = true;
-		}
-	}
-	else {
-		this->contracts.push(0);
-		this->contracts.push(0);
-	}
+	this->contracts.push(p1);
+	this->contracts.push(p2);
 	if (head1 != 0 && edges[head1].size() == 1) Contract(v1, head1);
 	if (head2 != 0 && edges[head2].size() == 1) Contract(v1, head2);
 	refresh();
-}
-
-bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
-	return perimeters[v1] && perimeters[v2];
 }
 
 void Polygon::Split() {
@@ -197,9 +213,9 @@ void Polygon::Split() {
 	this->contracts.pop();
 	std::cout << "SPLITTING " << v2 << " OUT OF " << v1 << " WITH HEADS "<< head1 << " " << head2 << "\n";
 	//Idea: check the heads
-	// if head1 is 0, and head2 is 0, blank collapse, skip
 	perimeters[v2] = p2;
 	perimeters[v1] = p1;
+	// if head1 is 0, and head2 is 0, blank collapse, skip
 	// if head2 = v1, then it is a single edge
 	if (head2 == v1) {
 		// connect v1 to v2
@@ -207,6 +223,10 @@ void Polygon::Split() {
 		indices.push_back(v2);
 		edges[v2].insert(v1);
 		edges[v1].insert(v2);
+		if (perimeters[v2] && perimeters[v1]) {
+			outer[v2].insert(v1);
+			outer[v1].insert(v2);
+		}
 		index_count += 2;
 		refresh();
 		return;
@@ -263,11 +283,6 @@ void Polygon::Split() {
 		index_count += 6;
 	}
 	refresh();
-	std::cout<<v2<<": ";
-	for (auto adj : edges[v2]) {
-		std::cout << adj << " ";
-	}
-	std::cout << "\n";
 }
 
 bool Polygon::is_above(unsigned int index, float m, float b) {
@@ -303,6 +318,8 @@ void Polygon::splitter(unsigned int v1, unsigned int v2, unsigned int head1, uns
 }
 
 void Polygon::refresh() {
+	for (int i = 0; i < indices.size(); i += 2) std::cout << indices[i] << " " << indices[i + 1] << " " << is_perim(indices[i], indices[i + 1]) << "\n";
+	std::cout << "\n";
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, &indices[0], GL_STATIC_DRAW);
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind

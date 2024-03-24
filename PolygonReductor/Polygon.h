@@ -46,5 +46,7 @@ private:
 	std::stack<unsigned int> contracts;
 	// perimeter vectors
 	std::vector<bool> perimeters;
+	// outer edges
+	std::unordered_map<unsigned int, std::set<unsigned int>> outer;
 	std::set<unsigned int> discarded;
 };
