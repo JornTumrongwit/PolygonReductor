@@ -252,6 +252,42 @@ void Polygon::split() {
 		if (twin(prev(eng)) >= 0) d_edge[twin(prev(eng)) * 2 + 1] = prev(eng);
 		if (twin(next(eng)) >= 0) d_edge[twin(next(eng)) * 2 + 1] = next(eng);
 	}
+	//changing the vertex
+	unsigned int newvtx = d_edge[prev(edge) * 2];
+	std::cout << "RETURN VERTEX: " << newvtx << "\n\n";
+	//spin counter clockwise
+	int start = prev(edge);
+	int the = start;
+	bool moved = false;
+	std::cout << "GOING COUNTERCLOCKWISE\n";
+	if (twin(the) != -1) {
+		moved = true;
+		start = prev(twin(start));
+		the = start;
+		std::cout << "STARTER IS: " << start << "\n";
+		std::cout << "MODIFYING: " << the << " MOVING " << d_edge[the * 2] << " AS SIGNALED BY " << the << "\n";
+		d_edge[the * 2] = newvtx;
+		if (twin(the) != -1) the = prev(twin(the));
+		while (the != start) {
+			std::cout << "MODIFYING: " << the << " MOVING " << d_edge[the * 2] << " AS SIGNALED BY " << the << "\n";
+			d_edge[the * 2] = newvtx;
+			if (twin(the) != -1) the = prev(twin(the));
+			else break;
+		}
+		std::cout << "STOPPED BECAUSE: " << (twin(the) != -1) << " " << (the != start) << "\n";
+	}
+	std::cout << "STARTING MOVING CLOCKWISE\n";
+	//spin clockwise if not stopping because of start, and that edge can rotate the other way
+	if ((the != start || !moved) && (twin(edge) != -1)) {
+		start = next(twin(edge));
+		the = start;
+		std::cout << "STARTING AT: " << start << "\n";
+		if (twin(the) != -1) {
+			std::cout << "MODIFYING: " << twin(the) << " MOVING " << d_edge[twin(the) * 2] << " AS SIGNALED BY " << the << "\n";
+			d_edge[twin(the) * 2] = newvtx;
+			the = next(twin(edge));
+		}
+	}
 	construct();
 	refresh();
 	printedge();
