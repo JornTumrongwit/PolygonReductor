@@ -40,6 +40,12 @@ public:
 	//the buffers
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;
+	//tmp <Move these to private before actual launch>
+	std::vector<float> get_normal(unsigned int, unsigned int);
+	unsigned int get_cost_QEM(unsigned int, unsigned int);
+	std::vector<unsigned int> get_min_cost_QEM();
+
+
 private:
 	int starter = 0;
 	std::vector<float> vertices;

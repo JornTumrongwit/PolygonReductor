@@ -322,6 +322,75 @@ void Polygon::printedge() {
 	std::cout << "\n";
 }
 
+/**
+* Get the normal of the vertex
+*/
+std::vector<float> Polygon::get_normal(unsigned int v1, unsigned int v2) {
+	std::vector<float> normal(2);
+
+	// y | -x (should I swap)
+	normal[1] = -(vertices[v1 * 3] - vertices[v2 * 3]);
+	normal[0] = vertices[v1 * 3 + 1] - vertices[v2 * 3 + 1];
+
+	return normal;
+}
+
+/**
+* Get the cost for collapsing v2 into v1 (v2 -> v1)
+*/
+unsigned int Polygon::get_cost_QEM(unsigned int v1, unsigned int v2) {
+	/**
+	* \Sigma^{m}_{i=1}(n_i \cdot v + d_i)^2
+	* n = normal 
+	* d = offset from origin
+	* v = new vertex location
+	*/
+	unsigned int cost = 0;
+
+	// get union of edges associated with v1,v2
+	std::set<unsigned int> nbrs;
+	nbrs.insert(edges.at(v1).begin(), edges.at(v1).end());
+	nbrs.insert(edges.at(v2).begin(), edges.at(v2).end());
+	nbrs.erase(v1);
+
+	for (auto v : nbrs) {
+		// Get normal of the plane 
+		std::vector<float> n = get_normal(v1, v);
+
+		// Get the offset from origin of the plane using midpoint
+		int mp_x = (vertices[v1 * 3 + 1] + vertices[v * 3 + 1]) / 2;
+		int mp_y = (vertices[v1 * 3] + vertices[v * 3]) / 2;
+		unsigned int offset = std::sqrt(mp_x * mp_x + mp_y * mp_y);
+
+		// Get n /cdot v
+		// ignore this if the vertex is not on the boundary.
+		int nv = (n[0]* vertices[v1 * 3] + n[1]* vertices[v1 * 3 + 1]);
+		cost += std::pow((offset + nv), 2);
+	}
+
+	return cost;
+}
+
+/**
+* Get the minimum cost pair to collapse in the next iteration.
+*/
+std::vector<unsigned int> Polygon::get_min_cost_QEM() {
+	std::vector<unsigned int> min_pair(2);
+	unsigned int min_cost = UINT_MAX;
+	unsigned int current_cost;
+	for (auto const& x: edges) {
+		for (auto v2 : x.second ) {
+			current_cost = get_cost_QEM(x.first, v2);
+			if (current_cost < min_cost) {
+				min_cost = current_cost;
+				min_pair[0] = x.first;
+				min_pair[1] = v2;
+			}
+		}	
+	}
+	return min_pair;
+}
+
 void Polygon::refresh() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, &indices[0], GL_STATIC_DRAW);
