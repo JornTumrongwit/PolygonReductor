@@ -19,7 +19,10 @@ const bool wireframe = true;
 const bool dot = true;
 const char* filepath = "bigger_graph.grp";
 bool r_pressed = false;
-bool z_pressed = false;
+bool z_pressed = false; 
+bool p_pressed = false;
+bool m_pressed = false;
+int val = 0;
 // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
 Polygon polygon = Polygon(filepath);
@@ -93,14 +96,27 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && r_pressed == true)
         r_pressed = false;
     else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && r_pressed == false) {
-        polygon.Contract(5, 6);
+        std::cout << "Collapsing " << val << "\n";
+        polygon.collapse(val);
         r_pressed = true;
     }
 
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_RELEASE && z_pressed == true)
         z_pressed = false;
     else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS && z_pressed == false) {
-        polygon.Split();
+        polygon.split();
         z_pressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE && p_pressed == true)
+        p_pressed = false;
+    else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && p_pressed == false) {
+        val++;
+        p_pressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE && m_pressed == true)
+        m_pressed = false;
+    else if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && m_pressed == false) {
+        val = val-1;
+        m_pressed = true;
     }
 }

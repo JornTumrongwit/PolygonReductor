@@ -15,10 +15,24 @@ public:
 	void parse(const char* filepath);
 	//initiating the buffers
 	void Init();
+	//constructing the triangles
+	void construct();
+	//construction helper
+	void construct_help(unsigned int start);
+	//getting previous edge
+	int prev(unsigned int ind);
+	//geting the next edge
+	int next(unsigned int ind);
+	//geting the twin edge
+	int twin(unsigned int ind);
 	//collapsing edge
-	void Contract(unsigned int v1, unsigned int v2);
+	void collapse(unsigned int edge);
+	//check if something is a boundary
+	bool boundary(int edge);
 	//splitting vertex from queue
-	void Split();
+	void split();
+	// better have a function to print out smth
+	void printedge();
 	//deleting buffers
 	void DeleteBuffer();
 	//refresh buffers
@@ -27,6 +41,10 @@ public:
 	bool is_above(unsigned int index, float m, float b);
 	//util for moving the edge in splitting
 	void splitter(unsigned int v1, unsigned int v2, unsigned int head1, unsigned int head2, float m, float b);
+	//check if an edge is a perimeter edge
+	bool is_perim(unsigned int v1, unsigned int v2);
+	//modification of perimeter after split
+	void perim_split();
 	//the buffers
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;
@@ -37,13 +55,27 @@ public:
 
 
 private:
+	int starter = 0;
 	std::vector<float> vertices;
 	std::vector<unsigned int> indices;
+	//Directed edges
+	std::vector<int> d_edge;
+	//construction flags
+	std::set<int> added_flags;
 	std::unordered_map<unsigned int, std::set<unsigned int>> edges;
 	//queue structure (in order of pop)
-	// first triangle head (also determines if it is a single-triangle op)
+	// first triangle head (also determines if it is a single-triangle op) (if it is a line collapse, head = v1)
 	// second triangle head
 	// vertex you contract to
 	// vertex that moved into the contract
+	// v1 normal
+	// v2 normal
 	std::stack<unsigned int> contracts;
+	// changes in perimeter
+	std::stack<unsigned int> normal_mod;
+	// perimeter vectors
+	std::vector<bool> perimeters;
+	// outer edges
+	std::unordered_map<unsigned int, std::set<unsigned int>> outer;
+	std::set<unsigned int> discarded;
 };
