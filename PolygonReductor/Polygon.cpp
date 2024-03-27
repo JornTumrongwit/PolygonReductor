@@ -153,13 +153,25 @@ void Polygon::Init() {
 	glEnableVertexAttribArray(0);
 }
 
-//checking whether an edge is a perimeter
-bool Polygon::is_perim(unsigned int v1, unsigned int v2) {
-	return perimeters[v1] && perimeters[v2] && bool(outer[v1].count(v2));
-}
-
 // Contract the specified edge
-void Polygon::collapse(unsigned int edge){
+bool Polygon::collapse(unsigned int edge){
+	//check if this edge is collapsed. If so, return false
+	if (collapsed.count(edge)) {
+		std::cout << "Edge: " << edge << " already collapsed.\n";
+		return false;
+	}
+	else {
+		//push all the related triangle edges
+		collapsed.insert(edge);
+		collapsed.insert(prev(edge));
+		collapsed.insert(next(edge));
+		int eng = twin(edge);
+		if (eng != -1) {
+			collapsed.insert(eng);
+			collapsed.insert(prev(eng));
+			collapsed.insert(next(eng));
+		}
+	}
 	//moving the starting edge (where it moves doesn't matter as long as it doesn't start at the deleted triangle
 	//cannot use: this edge, its twin, this prev, this next
 	if (starter == edge || starter == prev(edge) || starter == next(edge)){
@@ -171,7 +183,7 @@ void Polygon::collapse(unsigned int edge){
 				if (twin(edge) == -1) {
 					//giveup and cry
 					std::cout << "DON'T COLLAPSE THIS I DON'T WANNA DIIIIIIIIIIIIIIIIIIIE!";
-					return;
+					return false;
 				}
 				starter = twin(edge);
 			}
@@ -183,7 +195,7 @@ void Polygon::collapse(unsigned int edge){
 			starter = twin(next(twin(edge)));
 			if (starter == -1) {
 				std::cout << "DON'T COLLAPSE THIS I DON'T WANNA DIIIIIIIIIIIIIIIIIIIE!";
-				return;
+				return false;
 			}
 		}
 	}
@@ -235,6 +247,7 @@ void Polygon::collapse(unsigned int edge){
 	construct();
 	refresh();
 	printedge();
+	return true;
 }
 
 bool Polygon::boundary(int edge) {
@@ -244,8 +257,17 @@ bool Polygon::boundary(int edge) {
 void Polygon::split() {
 	if (contracts.empty()) return;
 	int edge = contracts.top();
-	contracts.pop();
+	//remove all the collapsed status
+	collapsed.erase(edge);
+	collapsed.erase(prev(edge));
+	collapsed.erase(next(edge));
 	int eng = twin(edge);
+	if (eng != -1) {
+		collapsed.erase(eng);
+		collapsed.erase(prev(eng));
+		collapsed.erase(next(eng));
+	}
+	contracts.pop();
 	if (twin(prev(edge)) >= 0) d_edge[twin(prev(edge)) * 2 + 1] = prev(edge);
 	if (twin(next(edge)) >= 0) d_edge[twin(next(edge)) * 2 + 1] = next(edge);
 	if (eng != -1) {

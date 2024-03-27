@@ -26,7 +26,7 @@ public:
 	//geting the twin edge
 	int twin(unsigned int ind);
 	//collapsing edge
-	void collapse(unsigned int edge);
+	bool collapse(unsigned int edge);
 	//check if something is a boundary
 	bool boundary(int edge);
 	//splitting vertex from queue
@@ -37,14 +37,6 @@ public:
 	void DeleteBuffer();
 	//refresh buffers
 	void refresh();
-	//util for checking "side" of the line the point is in
-	bool is_above(unsigned int index, float m, float b);
-	//util for moving the edge in splitting
-	void splitter(unsigned int v1, unsigned int v2, unsigned int head1, unsigned int head2, float m, float b);
-	//check if an edge is a perimeter edge
-	bool is_perim(unsigned int v1, unsigned int v2);
-	//modification of perimeter after split
-	void perim_split();
 	//the buffers
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;
@@ -56,7 +48,6 @@ private:
 	std::vector<int> d_edge;
 	//construction flags
 	std::set<int> added_flags;
-	std::unordered_map<unsigned int, std::set<unsigned int>> edges;
 	//queue structure (in order of pop)
 	// first triangle head (also determines if it is a single-triangle op) (if it is a line collapse, head = v1)
 	// second triangle head
@@ -67,9 +58,6 @@ private:
 	std::stack<unsigned int> contracts;
 	// changes in perimeter
 	std::stack<unsigned int> normal_mod;
-	// perimeter vectors
-	std::vector<bool> perimeters;
-	// outer edges
-	std::unordered_map<unsigned int, std::set<unsigned int>> outer;
-	std::set<unsigned int> discarded;
+	//collapsed edges
+	std::set<unsigned int> collapsed;
 };
