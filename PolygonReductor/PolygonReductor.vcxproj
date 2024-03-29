@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CostCalculator.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OGL\includes\glad.c" />
@@ -147,6 +148,7 @@
     <None Include="VertexShader.vs" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CostCalculator.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Polygon.h" />

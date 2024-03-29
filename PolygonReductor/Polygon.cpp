@@ -322,75 +322,6 @@ void Polygon::printedge() {
 	std::cout << "\n";
 }
 
-/**
-* Get the normal of the vertex
-*/
-std::vector<float> Polygon::get_normal(unsigned int v1, unsigned int v2) {
-	std::vector<float> normal(2);
-
-	// y | -x (should I swap)
-	normal[1] = -(vertices[v1 * 3] - vertices[v2 * 3]);
-	normal[0] = vertices[v1 * 3 + 1] - vertices[v2 * 3 + 1];
-
-	return normal;
-}
-
-/**
-* Get the cost for collapsing v2 into v1 (v2 -> v1)
-*/
-unsigned int Polygon::get_cost_QEM(unsigned int v1, unsigned int v2) {
-	/**
-	* \Sigma^{m}_{i=1}(n_i \cdot v + d_i)^2
-	* n = normal 
-	* d = offset from origin
-	* v = new vertex location
-	*/
-	unsigned int cost = 0;
-
-	// get union of edges associated with v1,v2
-	std::set<unsigned int> nbrs;
-	nbrs.insert(edges.at(v1).begin(), edges.at(v1).end());
-	nbrs.insert(edges.at(v2).begin(), edges.at(v2).end());
-	nbrs.erase(v1);
-
-	for (auto v : nbrs) {
-		// Get normal of the plane 
-		std::vector<float> n = get_normal(v1, v);
-
-		// Get the offset from origin of the plane using midpoint
-		int mp_x = (vertices[v1 * 3 + 1] + vertices[v * 3 + 1]) / 2;
-		int mp_y = (vertices[v1 * 3] + vertices[v * 3]) / 2;
-		unsigned int offset = std::sqrt(mp_x * mp_x + mp_y * mp_y);
-
-		// Get n /cdot v
-		// ignore this if the vertex is not on the boundary.
-		int nv = (n[0]* vertices[v1 * 3] + n[1]* vertices[v1 * 3 + 1]);
-		cost += std::pow((offset + nv), 2);
-	}
-
-	return cost;
-}
-
-/**
-* Get the minimum cost pair to collapse in the next iteration.
-*/
-std::vector<unsigned int> Polygon::get_min_cost_QEM() {
-	std::vector<unsigned int> min_pair(2);
-	unsigned int min_cost = UINT_MAX;
-	unsigned int current_cost;
-	for (auto const& x: edges) {
-		for (auto v2 : x.second ) {
-			current_cost = get_cost_QEM(x.first, v2);
-			if (current_cost < min_cost) {
-				min_cost = current_cost;
-				min_pair[0] = x.first;
-				min_pair[1] = v2;
-			}
-		}	
-	}
-	return min_pair;
-}
-
 void Polygon::refresh() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * this->index_count, &indices[0], GL_STATIC_DRAW);
@@ -410,4 +341,101 @@ void Polygon::DeleteBuffer() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
+}
+
+// ---------------------------------- COST CALCULATION ---------------------------------- //
+
+/**
+* @brief Get the incident vertices of the curernt edge
+* @param edge_i: index of the edge
+* @return index of two end vertices of edge_i stored in vec2 form
+*/
+std::vector<unsigned int> Polygon::get_incident_vert(unsigned int edge_i) {
+	std::vector<unsigned int> incident_vertices(2);
+	incident_vertices[0] = d_edge[prev(edge_i * 2)]; // va
+	incident_vertices[1] = d_edge[edge_i * 2]; // vb
+	return incident_vertices;
+}
+
+/**
+* @brief Get the normal of the edge
+* @param va: end vertex a index
+* @param vb: end vertex b index
+* @return normal of the edge_i as a vec2 of float
+*/
+std::vector<float> Polygon::get_normal(unsigned int va, unsigned int vb) {
+	std::vector<float> normal(2);
+
+	// fetch end vertices 
+	/*
+	std::vector<unsigned int> end_vertices = get_incident_vert(edge_i);
+	unsigned int va = end_vertices[0];
+	unsigned int vb = end_vertices[1];
+	*/
+
+	float dx = vertices[va * 3] - vertices[vb * 3];
+	float dy = vertices[va * 3 + 1] - vertices[vb * 3 + 1];
+
+	// dy | -dx (should I swap)
+	normal[0] = -dy;
+	normal[1] = dx;
+
+	return normal;
+}
+/**
+* @brief Calculate initial vertex cost.
+* For each Psuedo Plane (edge), calculate their QE and them to the cost of each vertex incident to itself.
+* @param va: end vertex a index
+* @param vb: end vertex b index 
+*/
+void Polygon::calc_init_vertex_cost(unsigned int va, unsigned int vb) {
+	/**
+	* c(v-) = \Sigma^{m}_{i=1}(n_i \cdot v + d_i)^2
+	* n = psuedo face normal
+	* d = offset from origin 
+	* v = vertex position
+	* 
+	* NOTE: Our representation allows us to completely ignore d
+	*/
+	unsigned int cost = 0;
+
+	// Get normal of the plane
+	std::vector<float> n = get_normal(va, vb);
+
+	vertex_cost[va] += std::pow((vertices[va * 3] * n[0] + vertices[va * 3 + 1] * n[1]),2);
+	vertex_cost[vb] += std::pow((vertices[vb * 3] * n[0] + vertices[vb * 3 + 1] * n[1]),2);
+}
+
+/**
+* @brief Initialize Quadratic Error for every vertex
+*/
+void Polygon::init_QEM() {
+	vertex_cost = std::vector<float>(this -> vertex_count, 0);
+
+	// Have a set of visited edge so we don't calculate more than once
+	// std::unordered_map<int, std::unordered_map<int, int>> visited_edge;
+	std::vector<unsigned int> end_vertices;
+	unsigned int va, vb;
+
+	for (auto e : d_edge) {
+		end_vertices =  get_incident_vert(e);
+		va = end_vertices[0];
+		vb = end_vertices[1];
+
+		calc_init_vertex_cost(va,vb);
+	}
+}
+
+/**
+* @brief Update the cost after each collapse
+* @param edge_i: index of the edge which is collapsed
+*/
+void Polygon::update_collapse_cost(unsigned int edge_i) {
+	std::vector<unsigned int> end_vertices = get_incident_vert(edge_i);
+	unsigned int va = end_vertices[0];
+	unsigned int vb = end_vertices[1];
+
+	// TODO:
+	//	- Make stack to store cost for splitting back
+	//  - get next move by sum vertices weight on edge
 }

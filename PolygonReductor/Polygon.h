@@ -40,11 +40,6 @@ public:
 	//the buffers
 	unsigned int VBO, VAO, EBO;
 	unsigned int vertex_count, index_count;
-	//tmp <Move these to private before actual launch>
-	std::vector<float> get_normal(unsigned int, unsigned int);
-	unsigned int get_cost_QEM(unsigned int, unsigned int);
-	std::vector<unsigned int> get_min_cost_QEM();
-
 
 private:
 	int starter = 0;
@@ -66,4 +61,18 @@ private:
 	std::stack<unsigned int> normal_mod;
 	//collapsed edges
 	std::set<unsigned int> collapsed;
+
+	// -------------------- Cost function Data Structures -------------------- //
+
+	std::vector<float> vertex_cost;
+
+	// --------------------- Cost function (and helpers) --------------------- //
+	std::vector<unsigned int> get_incident_vert(unsigned int);
+	//std::vector<float> get_normal(unsigned int);
+	std::vector<float> get_normal(unsigned int, unsigned int);
+	void init_QEM();
+	std::vector<unsigned int> get_min_edge();
+	//unsigned int calc_init_vertex_cost(unsigned int);
+	void calc_init_vertex_cost(unsigned int, unsigned int);
+	void update_collapse_cost(unsigned int);
 };
