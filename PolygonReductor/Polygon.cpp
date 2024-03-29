@@ -94,6 +94,7 @@ Polygon::Polygon(const char* filepath) {
 	this->vertex_count = 0;
 	this->index_count = 0;
 	parse(filepath);
+	init_QEM();
 }
 
 void Polygon::construct() {
@@ -353,7 +354,7 @@ void Polygon::DeleteBuffer() {
 */
 std::vector<unsigned int> Polygon::get_incident_vert(unsigned int edge_i) {
 	std::vector<unsigned int> incident_vertices(2);	
-	incident_vertices[0] = d_edge[prev(edge_i * 2)];	// va
+	incident_vertices[0] = d_edge[prev(edge_i) * 2];	// va
 	incident_vertices[1] = d_edge[edge_i * 2];			// vb
 	return incident_vertices;
 }
@@ -410,7 +411,7 @@ void Polygon::calc_init_vertex_cost(unsigned int va, unsigned int vb) {
 * @brief Initialize Quadratic Error for every vertex
 */
 void Polygon::init_QEM() {
-	vertex_cost = std::vector<float>(this -> vertex_count, 0);
+	vertex_cost = std::vector<float>(this -> vertex_count/3-1, 0);
 
 	// Have a set of visited edge so we don't calculate more than once
 	// std::unordered_map<int, std::unordered_map<int, int>> visited_edge;
@@ -418,14 +419,22 @@ void Polygon::init_QEM() {
 	unsigned int va, vb;
 
 	// This will for sure cause a segfault
-	for (auto e : d_edge) {
+
+	for (int i = 0; i < d_edge.size()-1/2; i++) {
+		unsigned int e = d_edge[i];
 		// ignore cost calculation if edge is a boundary.
 		if (e != -1 || twin(e) == -1) {
 			end_vertices = get_incident_vert(e);
 			va = end_vertices[0];
 			vb = end_vertices[1];
+			std::cout << va << ' ' << vb << '\n'; // Debug
 			calc_init_vertex_cost(va, vb);
 		}
+	}
+
+	// Debug
+	for (auto i : vertex_cost) {
+		std::cout << i << '\n';
 	}
 }
 
