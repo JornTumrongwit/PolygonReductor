@@ -10,6 +10,7 @@
 
 Polygon::Polygon() {
 	//haha get blank'd on
+
 }
 
 // OBJ file parser function. Used for loading the graph file.
@@ -351,9 +352,9 @@ void Polygon::DeleteBuffer() {
 * @return index of two end vertices of edge_i stored in vec2 form
 */
 std::vector<unsigned int> Polygon::get_incident_vert(unsigned int edge_i) {
-	std::vector<unsigned int> incident_vertices(2);
-	incident_vertices[0] = d_edge[prev(edge_i * 2)]; // va
-	incident_vertices[1] = d_edge[edge_i * 2]; // vb
+	std::vector<unsigned int> incident_vertices(2);	
+	incident_vertices[0] = d_edge[prev(edge_i * 2)];	// va
+	incident_vertices[1] = d_edge[edge_i * 2];			// vb
 	return incident_vertices;
 }
 
@@ -366,8 +367,7 @@ std::vector<unsigned int> Polygon::get_incident_vert(unsigned int edge_i) {
 std::vector<float> Polygon::get_normal(unsigned int va, unsigned int vb) {
 	std::vector<float> normal(2);
 
-	// fetch end vertices 
-	/*
+	/* fetch end vertices 
 	std::vector<unsigned int> end_vertices = get_incident_vert(edge_i);
 	unsigned int va = end_vertices[0];
 	unsigned int vb = end_vertices[1];
@@ -417,13 +417,27 @@ void Polygon::init_QEM() {
 	std::vector<unsigned int> end_vertices;
 	unsigned int va, vb;
 
+	// This will for sure cause a segfault
 	for (auto e : d_edge) {
-		end_vertices =  get_incident_vert(e);
-		va = end_vertices[0];
-		vb = end_vertices[1];
-
-		calc_init_vertex_cost(va,vb);
+		// ignore cost calculation if edge is a boundary.
+		if (e != -1 || twin(e) == -1) {
+			end_vertices = get_incident_vert(e);
+			va = end_vertices[0];
+			vb = end_vertices[1];
+			calc_init_vertex_cost(va, vb);
+		}
 	}
+}
+
+/**
+* @brief Get index of the edge with minimum cost calculated using vertex cost calculated prior.
+* @return index of edge with minimum cost.
+*/
+unsigned int Polygon::get_min_edge() {
+	for (auto i : d_edge) {
+		// TODO: This
+	}
+	return 0;
 }
 
 /**

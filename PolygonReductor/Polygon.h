@@ -71,7 +71,7 @@ private:
 	//std::vector<float> get_normal(unsigned int);
 	std::vector<float> get_normal(unsigned int, unsigned int);
 	void init_QEM();
-	std::vector<unsigned int> get_min_edge();
+	unsigned int get_min_edge();
 	//unsigned int calc_init_vertex_cost(unsigned int);
 	void calc_init_vertex_cost(unsigned int, unsigned int);
 	void update_collapse_cost(unsigned int);
