@@ -175,6 +175,7 @@ bool Polygon::collapse(unsigned int edge){
 			collapsed.insert(next(eng));
 		}
 	}
+	update_collapse_cost(edge);
 	//moving the starting edge (where it moves doesn't matter as long as it doesn't start at the deleted triangle
 	//cannot use: this edge, its twin, this prev, this next
 	if (starter == edge || starter == prev(edge) || starter == next(edge)){
@@ -323,6 +324,8 @@ void Polygon::printedge() {
 		std::cout << i << ": " << d_edge[i*2] << " " << d_edge[i*2+1] << "\n";
 	}
 	std::cout << "\n";
+
+	get_min_edge(); // Debug
 }
 
 void Polygon::refresh() {
@@ -416,10 +419,9 @@ void Polygon::init_QEM() {
 	std::vector<int> end_vertices;
 	int va, vb;
 
-	for (int i = 0; i < d_edge.size()/2 - 1; i++) {
+	for (int i = 0; i < d_edge.size()/2; i++) {
 		
 		std::cout << '[' << i << "]\n"; // Debug
-
 
 		int e = d_edge[i];
 
@@ -447,10 +449,28 @@ void Polygon::init_QEM() {
 * @return index of edge with minimum cost.
 */
 unsigned int Polygon::get_min_edge() {
-	for (auto i : d_edge) {
-		// TODO: This
+	std::vector<int> end_vertices;
+	unsigned int min_edge = 0;
+	int va, vb;
+	float cost = 0.0, min_cost = FLT_MAX;
+	for (int i = 0; i < d_edge.size() / 2; i++) {
+
+		//std::cout << '[' << i << "]\n"; // Debug
+		if (!collapsed.count(i)) {
+			end_vertices = get_incident_vert(i);
+			va = end_vertices[0];
+			vb = end_vertices[1];
+
+			cost = vertex_cost[va - 1];
+			if (min_cost > cost) {
+				min_cost = cost;
+				min_edge = i;
+			}
+		}
 	}
-	return 0;
+
+	std::cout << "edge " << min_edge << " : " << min_cost;
+	return min_edge;
 }
 
 /**
@@ -462,9 +482,13 @@ void Polygon::update_collapse_cost(unsigned int edge_i) {
 	int va = end_vertices[0];
 	int vb = end_vertices[1];
 
+	vertex_cost[va-1] += vertex_cost[vb-1];
+	vertex_cost[vb-1] = FLT_MAX; // temp
+
+	print_vertex_cost();
+
 	// TODO:
 	//	- Make stack to store cost for splitting back
-	//  - get next move by sum vertices weight on edge
 }
 
 void Polygon::print_vertex_cost() {
