@@ -94,6 +94,7 @@ Polygon::Polygon(const char* filepath) {
 	this->vertex_count = 0;
 	this->index_count = 0;
 	parse(filepath);
+
 	init_QEM();
 }
 
@@ -277,7 +278,7 @@ void Polygon::split() {
 		if (twin(next(eng)) >= 0) d_edge[twin(next(eng)) * 2 + 1] = next(eng);
 	}
 	//changing the vertex
-	unsigned int newvtx = d_edge[prev(edge) * 2];
+	unsigned int newvtx = d_edge[prvev(edge) * 2];
 	std::cout << "RETURN VERTEX: " << newvtx << "\n\n";
 	//spin counter clockwise
 	int start = prev(edge);
@@ -352,8 +353,8 @@ void Polygon::DeleteBuffer() {
 * @param edge_i: index of the edge
 * @return index of two end vertices of edge_i stored in vec2 form
 */
-std::vector<unsigned int> Polygon::get_incident_vert(unsigned int edge_i) {
-	std::vector<unsigned int> incident_vertices(2);	
+std::vector<int> Polygon::get_incident_vert(int edge_i) {
+	std::vector<int> incident_vertices(2);	
 	incident_vertices[0] = d_edge[prev(edge_i) * 2];	// va
 	incident_vertices[1] = d_edge[edge_i * 2];			// vb
 	return incident_vertices;
@@ -365,14 +366,10 @@ std::vector<unsigned int> Polygon::get_incident_vert(unsigned int edge_i) {
 * @param vb: end vertex b index
 * @return normal of the edge_i as a vec2 of float
 */
-std::vector<float> Polygon::get_normal(unsigned int va, unsigned int vb) {
+std::vector<float> Polygon::get_normal(int va, int vb) {
 	std::vector<float> normal(2);
 
-	/* fetch end vertices 
-	std::vector<unsigned int> end_vertices = get_incident_vert(edge_i);
-	unsigned int va = end_vertices[0];
-	unsigned int vb = end_vertices[1];
-	*/
+	std::cout << "vertices index" << va * 3 + 1 << ' ' << vb * 3 + 1 << std::endl;
 
 	float dx = vertices[va * 3] - vertices[vb * 3];
 	float dy = vertices[va * 3 + 1] - vertices[vb * 3 + 1];
@@ -389,9 +386,9 @@ std::vector<float> Polygon::get_normal(unsigned int va, unsigned int vb) {
 * @param va: end vertex a index
 * @param vb: end vertex b index 
 */
-void Polygon::calc_init_vertex_cost(unsigned int va, unsigned int vb) {
+void Polygon::calc_init_vertex_cost(int va, int vb) {
 	/**
-	* c(v-) = \Sigma^{m}_{i=1}(n_i \cdot v + d_i)^2
+	* c(v) = \Sigma^{m}_{i=1}(n_i \cdot v + d_i)^2
 	* n = psuedo face normal
 	* d = offset from origin 
 	* v = vertex position
@@ -402,6 +399,7 @@ void Polygon::calc_init_vertex_cost(unsigned int va, unsigned int vb) {
 
 	// Get normal of the plane
 	std::vector<float> n = get_normal(va, vb);
+	std::cout << n[0] << ' ' << n[1] << '/n';
 
 	vertex_cost[va] += std::pow((vertices[va * 3] * n[0] + vertices[va * 3 + 1] * n[1]),2);
 	vertex_cost[vb] += std::pow((vertices[vb * 3] * n[0] + vertices[vb * 3 + 1] * n[1]),2);
@@ -415,27 +413,28 @@ void Polygon::init_QEM() {
 
 	// Have a set of visited edge so we don't calculate more than once
 	// std::unordered_map<int, std::unordered_map<int, int>> visited_edge;
-	std::vector<unsigned int> end_vertices;
-	unsigned int va, vb;
+	std::vector<int> end_vertices;
+	int va, vb;
 
-	// This will for sure cause a segfault
+	for (int i = 0; i < d_edge.size()/2; i++) {
+		int e = d_edge[i];
 
-	for (int i = 0; i < d_edge.size()-1/2; i++) {
-		unsigned int e = d_edge[i];
+		// debug
+		std::cout << "edge: " << e << '\n';
+
 		// ignore cost calculation if edge is a boundary.
-		if (e != -1 || twin(e) == -1) {
+		if (e != -1 && twin(e) == -1) {
 			end_vertices = get_incident_vert(e);
 			va = end_vertices[0];
 			vb = end_vertices[1];
 			std::cout << va << ' ' << vb << '\n'; // Debug
+			print_vertex_cost();
 			calc_init_vertex_cost(va, vb);
 		}
 	}
 
 	// Debug
-	for (auto i : vertex_cost) {
-		std::cout << i << '\n';
-	}
+	print_vertex_cost();
 }
 
 /**
@@ -454,11 +453,19 @@ unsigned int Polygon::get_min_edge() {
 * @param edge_i: index of the edge which is collapsed
 */
 void Polygon::update_collapse_cost(unsigned int edge_i) {
-	std::vector<unsigned int> end_vertices = get_incident_vert(edge_i);
-	unsigned int va = end_vertices[0];
-	unsigned int vb = end_vertices[1];
+	std::vector<int> end_vertices = get_incident_vert(edge_i);
+	int va = end_vertices[0];
+	int vb = end_vertices[1];
 
 	// TODO:
 	//	- Make stack to store cost for splitting back
 	//  - get next move by sum vertices weight on edge
+}
+
+void Polygon::print_vertex_cost() {
+	std::cout << "vertex cost: [";
+	for (auto i : vertex_cost) {
+		std::cout << i << ',';
+	}
+	std::cout << "]\n";
 }

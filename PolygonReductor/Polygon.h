@@ -67,12 +67,13 @@ private:
 	std::vector<float> vertex_cost;
 
 	// --------------------- Cost function (and helpers) --------------------- //
-	std::vector<unsigned int> get_incident_vert(unsigned int);
+	std::vector<int> get_incident_vert(int);
 	//std::vector<float> get_normal(unsigned int);
-	std::vector<float> get_normal(unsigned int, unsigned int);
+	std::vector<float> get_normal(int, int);
 	void init_QEM();
 	unsigned int get_min_edge();
 	//unsigned int calc_init_vertex_cost(unsigned int);
-	void calc_init_vertex_cost(unsigned int, unsigned int);
+	void calc_init_vertex_cost(int, int);
 	void update_collapse_cost(unsigned int);
+	void print_vertex_cost();
 };
