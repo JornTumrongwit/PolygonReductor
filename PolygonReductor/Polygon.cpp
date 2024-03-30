@@ -278,7 +278,7 @@ void Polygon::split() {
 		if (twin(next(eng)) >= 0) d_edge[twin(next(eng)) * 2 + 1] = next(eng);
 	}
 	//changing the vertex
-	unsigned int newvtx = d_edge[prvev(edge) * 2];
+	unsigned int newvtx = d_edge[prev(edge) * 2];
 	std::cout << "RETURN VERTEX: " << newvtx << "\n\n";
 	//spin counter clockwise
 	int start = prev(edge);
