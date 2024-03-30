@@ -65,15 +65,21 @@ private:
 	// -------------------- Cost function Data Structures -------------------- //
 
 	std::vector<float> vertex_cost;
+	std::stack<std::pair<unsigned int, float>> vertex_cost_stack;
 
 	// --------------------- Cost function (and helpers) --------------------- //
-	std::vector<int> get_incident_vert(int);
-	//std::vector<float> get_normal(unsigned int);
-	std::vector<float> get_normal(int, int);
+
 	void init_QEM();
-	unsigned int get_min_edge();
-	//unsigned int calc_init_vertex_cost(unsigned int);
 	void calc_init_vertex_cost(int, int);
+	unsigned int get_min_edge();
+
 	void update_collapse_cost(unsigned int);
+	void update_split_cost();
+
+	// ----------------------- Cost function Utilities ----------------------- //
+
+	std::vector<int> get_incident_vert(int);
+	std::vector<float> get_normal(int, int);
 	void print_vertex_cost();
+
 };

@@ -372,7 +372,7 @@ std::vector<int> Polygon::get_incident_vert(int edge_i) {
 std::vector<float> Polygon::get_normal(int va, int vb) {
 	std::vector<float> normal(2);
 
-	std::cout << "vertices index :" << va  << ' ' << vb  << '\n'; // Debug
+	//std::cout << "vertices index :" << va  << ' ' << vb  << '\n'; // Debug
 
 	float dx = vertices[va * 3] - vertices[vb * 3];
 	float dy = vertices[va * 3 + 1] - vertices[vb * 3 + 1];
@@ -402,7 +402,7 @@ void Polygon::calc_init_vertex_cost(int va, int vb) {
 
 	// Get normal of the plane
 	std::vector<float> n = get_normal(va, vb);
-	std::cout << "normal: " << n[0] << ' ' << n[1] << " \n"; // Debug
+	// std::cout << "normal: " << n[0] << ' ' << n[1] << " \n"; // Debug
 
 	vertex_cost[va-1] += std::pow((vertices[va * 3] * n[0] + vertices[va * 3 + 1] * n[1]),2);
 	vertex_cost[vb-1] += std::pow((vertices[vb * 3] * n[0] + vertices[vb * 3 + 1] * n[1]),2);
@@ -421,12 +421,9 @@ void Polygon::init_QEM() {
 
 	for (int i = 0; i < d_edge.size()/2; i++) {
 		
-		std::cout << '[' << i << "]\n"; // Debug
+		//std::cout << '[' << i << "]\n"; // Debug
 
-		int e = d_edge[i];
-
-		// debug
-		// std::cout << "edge: " << e << '\n';
+		// std::cout << "edge: " << e << '\n'; 		// Debug
 
 		// ignore cost calculation if edge is a boundary.
 		// if (e != -1 && twin(e) == -1) {
@@ -434,13 +431,12 @@ void Polygon::init_QEM() {
 			end_vertices = get_incident_vert(i);
 			va = end_vertices[0];
 			vb = end_vertices[1];
-			std::cout << va << ' ' << vb << '\n'; // Debug
-			print_vertex_cost();
+			// std::cout << va << ' ' << vb << '\n'; // Debug
+			// print_vertex_cost(); // Debug
 			calc_init_vertex_cost(va, vb);
 		}
 	}
 	
-	// Debug
 	print_vertex_cost();
 }
 
@@ -491,6 +487,19 @@ void Polygon::update_collapse_cost(unsigned int edge_i) {
 	//	- Make stack to store cost for splitting back
 }
 
+/**
+* @brief Update the cost after each split using saved cost from the stack
+*/
+void Polygon::update_split_cost() {
+	// TODO:
+	//	- Pop the stack and returns the cost value
+	print_vertex_cost();
+
+}
+
+/**
+* @brief Print out array of vertex cost
+*/
 void Polygon::print_vertex_cost() {
 	std::cout << "vertex cost: [";
 	for (auto i : vertex_cost) {
