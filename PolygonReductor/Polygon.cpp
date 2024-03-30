@@ -175,7 +175,6 @@ bool Polygon::collapse(unsigned int edge){
 			collapsed.insert(next(eng));
 		}
 	}
-	update_collapse_cost(edge);
 	//moving the starting edge (where it moves doesn't matter as long as it doesn't start at the deleted triangle
 	//cannot use: this edge, its twin, this prev, this next
 	if (starter == edge || starter == prev(edge) || starter == next(edge)){
@@ -248,6 +247,10 @@ bool Polygon::collapse(unsigned int edge){
 			the = next(twin(edge));
 		}
 	}
+
+	// Update new vertex cost
+	update_collapse_cost(edge);
+
 	construct();
 	refresh();
 	printedge();
@@ -314,6 +317,10 @@ void Polygon::split() {
 			the = next(twin(edge));
 		}
 	}
+
+	// Revert vertex cost
+	update_split_cost();
+
 	construct();
 	refresh();
 	printedge();
@@ -478,6 +485,8 @@ void Polygon::update_collapse_cost(unsigned int edge_i) {
 	int va = end_vertices[0];
 	int vb = end_vertices[1];
 
+	vertex_cost_stack.push(std::vector<std::pair<int, float>>{std::pair<int, float>(va, vertex_cost[va - 1]), std::pair<int, float>(vb, vertex_cost[vb - 1])});
+
 	vertex_cost[va-1] += vertex_cost[vb-1];
 	vertex_cost[vb-1] = FLT_MAX; // temp
 
@@ -493,6 +502,12 @@ void Polygon::update_collapse_cost(unsigned int edge_i) {
 void Polygon::update_split_cost() {
 	// TODO:
 	//	- Pop the stack and returns the cost value
+	std::vector<std::pair<int, float>> previous_cost = vertex_cost_stack.top();
+	vertex_cost_stack.pop();
+	for (auto p : previous_cost) {
+		vertex_cost[p.first - 1] = p.second;
+	}
+
 	print_vertex_cost();
 
 }

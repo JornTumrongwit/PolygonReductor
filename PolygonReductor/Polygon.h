@@ -65,7 +65,7 @@ private:
 	// -------------------- Cost function Data Structures -------------------- //
 
 	std::vector<float> vertex_cost;
-	std::stack<std::pair<unsigned int, float>> vertex_cost_stack;
+	std::stack<std::vector<std::pair<int, float>>> vertex_cost_stack;
 
 	// --------------------- Cost function (and helpers) --------------------- //
 
