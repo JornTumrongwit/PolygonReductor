@@ -147,6 +147,7 @@
     <None Include="VertexShader.vs" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CostCalculator.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Polygon.h" />

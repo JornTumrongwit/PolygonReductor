@@ -10,6 +10,7 @@
 
 Polygon::Polygon() {
 	//haha get blank'd on
+
 }
 
 // OBJ file parser function. Used for loading the graph file.
@@ -93,6 +94,8 @@ Polygon::Polygon(const char* filepath) {
 	this->vertex_count = 0;
 	this->index_count = 0;
 	parse(filepath);
+
+	init_QEM();
 }
 
 void Polygon::construct() {
@@ -244,6 +247,10 @@ bool Polygon::collapse(unsigned int edge){
 			the = next(twin(edge));
 		}
 	}
+
+	// Update new vertex cost
+	update_collapse_cost(edge);
+
 	construct();
 	refresh();
 	printedge();
@@ -310,6 +317,10 @@ void Polygon::split() {
 			the = next(twin(edge));
 		}
 	}
+
+	// Revert vertex cost
+	update_split_cost();
+
 	construct();
 	refresh();
 	printedge();
@@ -320,6 +331,8 @@ void Polygon::printedge() {
 		std::cout << i << ": " << d_edge[i*2] << " " << d_edge[i*2+1] << "\n";
 	}
 	std::cout << "\n";
+
+	get_min_edge(); // (Let's just leave it here.)
 }
 
 void Polygon::refresh() {
@@ -341,4 +354,150 @@ void Polygon::DeleteBuffer() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
+}
+
+// ---------------------------------- COST CALCULATION ---------------------------------- //
+
+/**
+* @brief Get the incident vertices of the curernt edge
+* @param edge_i: index of the edge
+* @return index of two end vertices of edge_i stored in vec2 form
+*/
+std::vector<int> Polygon::get_incident_vert(int edge_i) {
+	std::vector<int> incident_vertices(2);	
+	incident_vertices[0] = d_edge[prev(edge_i) * 2];	// va
+	incident_vertices[1] = d_edge[edge_i * 2];			// vb
+	return incident_vertices;
+}
+
+/**
+* @brief Get the normal of the edge
+* @param va: end vertex a index
+* @param vb: end vertex b index
+* @return normal of the edge_i as a vec2 of float
+*/
+std::vector<float> Polygon::get_normal(int va, int vb) {
+	std::vector<float> normal(2);
+	float dx = vertices[va * 3] - vertices[vb * 3];
+	float dy = vertices[va * 3 + 1] - vertices[vb * 3 + 1];
+
+	normal[0] = -dy;
+	normal[1] = dx;
+
+	return normal;
+}
+/**
+* @brief Calculate initial vertex cost.
+* For each Psuedo Plane (edge), calculate their QE and them to the cost of each vertex incident to itself.
+* @param va: end vertex a index
+* @param vb: end vertex b index 
+*/
+void Polygon::calc_init_vertex_cost(int va, int vb) {
+	/**
+	* c(v) = \Sigma^{m}_{i=1}(n_i \cdot v + d_i)^2
+	* n = psuedo face normal
+	* d = offset from origin 
+	* v = vertex position
+	* 
+	* NOTE: Our representation allows us to completely ignore d
+	*/
+	unsigned int cost = 0;
+
+	// Get normal of the plane
+	std::vector<float> n = get_normal(va, vb);
+
+	//vertex_cost[va-1] += std::pow((vertices[va * 3] * n[0] + vertices[va * 3 + 1] * n[1]),2);
+	vertex_cost[vb-1] += std::pow((vertices[vb * 3] * n[0] + vertices[vb * 3 + 1] * n[1]),2);   // Maybe this? [1]
+} 
+
+/**
+* @brief Initialize Quadric Error for every vertex
+*/
+void Polygon::init_QEM() {
+	vertex_cost = std::vector<float>(this -> vertex_count/3-1, 0);
+	std::vector<int> end_vertices;
+	int va, vb;
+
+	for (int i = 0; i < d_edge.size()/2; i++) {
+
+		// ignore cost calculation if edge is a boundary.
+		if (twin(i) == -1) {
+			end_vertices = get_incident_vert(i);
+			va = end_vertices[0];
+			vb = end_vertices[1];
+
+			calc_init_vertex_cost(va, vb);
+		}
+	}
+	print_vertex_cost();
+}
+
+/**
+* @brief Get index of the edge with minimum cost calculated using vertex cost calculated prior.
+* @return index of edge with minimum cost.
+*/
+unsigned int Polygon::get_min_edge() {
+	std::vector<int> end_vertices;
+	unsigned int min_edge = 0;
+	int va, vb;
+	float cost = 0.0, min_cost = FLT_MAX;
+	for (int i = 0; i < d_edge.size() / 2; i++) {
+
+		if (!collapsed.count(i)) {
+			end_vertices = get_incident_vert(i);
+			va = end_vertices[0];
+			vb = end_vertices[1];
+
+			cost = vertex_cost[va - 1];
+			if (min_cost > cost) {
+				min_cost = cost;
+				min_edge = i;
+			}
+		}
+	}
+
+	std::cout << "edge " << min_edge << " : " << min_cost;
+	return min_edge;
+}
+
+/**
+* @brief Update the cost after each collapse
+* @param edge_i: index of the edge which is collapsed
+*/
+void Polygon::update_collapse_cost(unsigned int edge_i) {
+	std::vector<int> end_vertices = get_incident_vert(edge_i);
+	int va = end_vertices[0];
+	int vb = end_vertices[1];
+
+	vertex_cost_stack.push(std::vector<std::pair<int, float>>{std::pair<int, float>(va, vertex_cost[va - 1]), std::pair<int, float>(vb, vertex_cost[vb - 1])});
+
+	vertex_cost[va-1] += vertex_cost[vb-1];
+	vertex_cost[vb-1] = FLT_MAX; 
+
+	print_vertex_cost();
+}
+
+/**
+* @brief Update the cost after each split using saved cost from the stack
+*/
+void Polygon::update_split_cost() {
+	std::vector<std::pair<int, float>> previous_cost = vertex_cost_stack.top();
+	vertex_cost_stack.pop();
+	for (auto p : previous_cost) {
+		vertex_cost[p.first - 1] = p.second;
+	}
+
+	print_vertex_cost();
+
+}
+
+/**
+* @brief Print out array of vertex cost
+*/
+void Polygon::print_vertex_cost() {
+	std::cout << "vertex cost: [";
+	for (auto i : vertex_cost) {
+		std::cout << i << ',';
+	}
+	std::cout << "]\n";
 }
